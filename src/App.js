@@ -7,12 +7,38 @@ import { Wallet, ethers } from "ethers";
 const App = () => {
   // Wallet Setup
   const MINUTE_MS = 10000;
-  let xtmp_set = false;
+  let xtmp_setup = false;
+  let xtmp_call = false;
   const [currentAccount, setCurrentAccount] = useState("");
+  const [currentXMTP, setCurrentXMTP] = useState([]);
+  const [allMessages, setAllMessages] = useState([]);
+
   let provider;
   let wallet;
-  let xmtp;
+
+  const checkIfXMTPConnected = async (account) => {
+    try {
+      if (currentXMTP.length !== 0) {
+        console.log("XMTP setup already!", currentXMTP);
+
+        return;
+      } else {
+        if (account && !xtmp_call) {
+          xtmp_call = true;
+          console.log("Calling connectXMTP()", account);
+          connectXMTP();
+        } else {
+          console.log("Ethereum wallet needs to be configured");
+          return;
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   //check to see if wallet is connected
+
   const checkIfWalletIsConnected = async () => {
     try {
       const { ethereum } = window;
@@ -30,18 +56,7 @@ const App = () => {
         const account = accounts[0];
         console.log("Found an authorized account:", account);
         setCurrentAccount(account);
-
-        if (!xtmp_set) {
-          xtmp_set = true;
-          provider = new ethers.providers.Web3Provider(ethereum);
-          wallet = provider.getSigner();
-          // Create the client with your wallet. This will connect to the XMTP development network by default
-          xmtp = await Client.create(wallet);
-          console.log("creating new xtmp connection.");
-        }
-        if (xmtp !== undefined) {
-          getMessages();
-        }
+        checkIfXMTPConnected(account);
       } else {
         console.log("No authorized account found");
       }
@@ -50,38 +65,44 @@ const App = () => {
     }
   };
 
-  const getMessages = async () => {
-    // Start a conversation with Vitalik
-    const conversation = await xmtp.conversations.newConversation(
-      "0x5A7A9517f118dCCEfAFcB6AF99ADD30b904Ce9cb"
-    );
-
-    // Load all messages in the conversation
-    const messages = await conversation.messages();
-    // Send a message
-    // await conversation.send("gm0001");
+  const getMessages = async (xmtp) => {
+    console.log("Getting messages...");
+    console.log(" xmtp.conversations.list()", await xmtp.conversations.list());
+    var allMessages = new Array();
     for (const conversation of await xmtp.conversations.list()) {
       const messagesInConversation = await conversation.messages();
+
       for await (const message of messagesInConversation) {
-        if (message.senderAddress === xmtp.address) {
-          // This message was sent from me
-          continue;
-        }
+        allMessages.push(message);
         console.log(
           `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
         );
       }
     }
 
-    for await (const message of await conversation.streamMessages()) {
-      if (message.senderAddress === xmtp.address) {
-        // This message was sent from me
-        continue;
-      }
-      console.log(
-        `New message from ${message.senderAddress}: ${message.id}: ${message.content}`
-      );
+    const messagesCleaned = allMessages.map((message) => {
+      return {
+        Sender: message.senderAddress,
+        Hash: message.id,
+        Content: message.content,
+      };
+    });
+    setAllMessages(messagesCleaned);
+  };
+
+  const connectXMTP = async () => {
+    const { ethereum } = window;
+    if (!ethereum) {
+      alert("Get MetaMask!");
+      return;
     }
+    provider = new ethers.providers.Web3Provider(ethereum);
+    wallet = provider.getSigner();
+    // Create the client with your wallet. This will connect to the XMTP development network by default
+    const xmtp = await Client.create(wallet);
+    setCurrentXMTP(xmtp);
+    xtmp_call = false;
+    getMessages(xmtp);
   };
 
   /**
@@ -102,6 +123,7 @@ const App = () => {
 
       console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
+      checkIfXMTPConnected(accounts[0]);
     } catch (error) {
       console.log(error);
     }
@@ -109,11 +131,14 @@ const App = () => {
 
   const sendMessage = async () => {
     try {
-      if (xmtp !== undefined) {
-        const conversation = await xmtp.conversations.newConversation(
-          "0x5A7A9517f118dCCEfAFcB6AF99ADD30b904Ce9cb"
+      if (currentXMTP) {
+        console.log("Entering sendMessage()...");
+        const conversation = await currentXMTP.conversations.newConversation(
+          "0xd69DFe5AE027B4912E384B821afeB946592fb648"
         );
-        await conversation.send("gm0001");
+        const now = new Date();
+        await conversation.send(now);
+        console.log("Sending message to user.", now);
       }
     } catch (error) {
       console.log(error);
@@ -135,12 +160,30 @@ const App = () => {
 
   return (
     <div className="mainContainer">
-      hi
+      Hi!
       {!currentAccount && (
         <button className="waveButton" onClick={connectWallet}>
           Connect Wallet
         </button>
       )}
+      <div styles="overflow-y : scroll; max-height: 200px;">
+        {allMessages.map((message, index) => {
+          return (
+            <div
+              key={index}
+              style={{
+                backgroundColor: "OldLace",
+                marginTop: "16px",
+                padding: "8px",
+              }}
+            >
+              <div>Sender: {message.Sender}</div>
+              <div>Message Hash: {message.Hash}</div>
+              <div>Message: {message.Content}</div>
+            </div>
+          );
+        })}
+      </div>
       {
         <button className="SendMessage" onClick={sendMessage}>
           SendMessage
