@@ -3,6 +3,17 @@ import "./App.css";
 import React, { useEffect, useState } from "react";
 import { Client } from "@xmtp/xmtp-js";
 import { Wallet, ethers } from "ethers";
+import createMetaMaskProvider from 'metamask-extension-provider'
+
+const getProvider = () => {
+    if (window.ethereum) {
+        console.log('found window.ethereum>>');
+        return window.ethereum;
+    } else {
+        const provider = createMetaMaskProvider();
+        return provider;
+    }
+}
 
 const App = () => {
   // Wallet Setup
@@ -13,7 +24,7 @@ const App = () => {
   const [currentXMTP, setCurrentXMTP] = useState([]);
   const [allMessages, setAllMessages] = useState([]);
 
-  let provider;
+  let web3Provider;
   let wallet;
 
   const checkIfXMTPConnected = async (account) => {
@@ -41,16 +52,8 @@ const App = () => {
 
   const checkIfWalletIsConnected = async () => {
     try {
-      const { ethereum } = window;
-
-      if (!ethereum) {
-        console.log("Make sure you have metamask!");
-        return;
-      } else {
-        console.log("We have the ethereum object", ethereum);
-      }
-
-      const accounts = await ethereum.request({ method: "eth_accounts" });
+      web3Provider = new ethers.providers.Web3Provider(getProvider());
+      const accounts = await web3Provider.provider.request({ method: "eth_accounts" });
 
       if (accounts.length !== 0) {
         const account = accounts[0];
@@ -91,13 +94,8 @@ const App = () => {
   };
 
   const connectXMTP = async () => {
-    const { ethereum } = window;
-    if (!ethereum) {
-      alert("Get MetaMask!");
-      return;
-    }
-    provider = new ethers.providers.Web3Provider(ethereum);
-    wallet = provider.getSigner();
+    web3Provider = new ethers.providers.Web3Provider(getProvider());
+    wallet = web3Provider.getSigner();
     // Create the client with your wallet. This will connect to the XMTP development network by default
     const xmtp = await Client.create(wallet);
     setCurrentXMTP(xmtp);
@@ -110,14 +108,8 @@ const App = () => {
    */
   const connectWallet = async () => {
     try {
-      const { ethereum } = window;
-
-      if (!ethereum) {
-        alert("Get MetaMask!");
-        return;
-      }
-
-      const accounts = await ethereum.request({
+      web3Provider = new ethers.providers.Web3Provider(getProvider());
+      const accounts = await web3Provider.provider.request({
         method: "eth_requestAccounts",
       });
 
@@ -155,7 +147,7 @@ const App = () => {
   // blah();
 
   useEffect(() => {
-    checkIfWalletIsConnected();
+    // checkIfWalletIsConnected();
   }, []);
 
   return (
