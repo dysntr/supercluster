@@ -5,6 +5,13 @@ import { Client } from "@xmtp/xmtp-js";
 import { Wallet, ethers } from "ethers";
 import createMetaMaskProvider from 'metamask-extension-provider'
 
+// Navigation Imports
+import {BrowserRouter, Routes, Route} from 'react-router-dom';
+
+// Components
+import Home from './pages/Home';
+import Created from "./pages/Created";
+
 const getProvider = () => {
     if (window.ethereum) {
         console.log('found window.ethereum>>');
@@ -150,39 +157,20 @@ const App = () => {
     // checkIfWalletIsConnected();
   }, []);
 
-  return (
-    <div className="mainContainer">
-      Hi!
-      {!currentAccount && (
-        <button className="waveButton" onClick={connectWallet}>
-          Connect Wallet
-        </button>
-      )}
-      <div styles="overflow-y : scroll; max-height: 200px;">
-        {allMessages.map((message, index) => {
-          return (
-            <div
-              key={index}
-              style={{
-                backgroundColor: "OldLace",
-                marginTop: "16px",
-                padding: "8px",
-              }}
-            >
-              <div>Sender: {message.Sender}</div>
-              <div>Message Hash: {message.Hash}</div>
-              <div>Message: {message.Content}</div>
-            </div>
-          );
-        })}
-      </div>
-      {
-        <button className="SendMessage" onClick={sendMessage}>
-          SendMessage
-        </button>
-      }
-    </div>
-  );
+  if(!currentAccount) {
+    return (
+      <button className="waveButton" onClick={connectWallet}>
+        Connect Wallet
+      </button>
+    )
+  } else {
+    return (
+      <Routes>
+        <Route path="/" index element={<Home allMessages = {allMessages} walletAdress={currentAccount} />} />
+        <Route path="/created" element={<Created />} />
+      </Routes>
+    )
+  }
 };
 
 export default App;
