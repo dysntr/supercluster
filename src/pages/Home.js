@@ -1,4 +1,4 @@
-import Navigation from "../components/Navigation";
+import { Link } from "react-router-dom";
 
 export default function Home(props) {
   const walletAddress = props.walletAddress;
@@ -6,7 +6,13 @@ export default function Home(props) {
 
   return (
     <div>
-      <Navigation />
+      <h1>Supercluster</h1>
+      <div>
+        <body>Connected address: {walletAddress}</body>
+      </div>
+      <nav>
+        
+      </nav>
       <div>
         {allMessages.map((message, index) => {
           return (

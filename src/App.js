@@ -1,4 +1,3 @@
-import logo from "./logo.svg";
 import "./App.css";
 import React, { useEffect, useState } from "react";
 import { Client } from "@xmtp/xmtp-js";
@@ -6,7 +5,7 @@ import { Wallet, ethers } from "ethers";
 import createMetaMaskProvider from 'metamask-extension-provider'
 
 // Navigation Imports
-import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import {Routes, Route} from 'react-router-dom';
 
 // Components
 import Home from './pages/Home';
@@ -166,7 +165,7 @@ const App = () => {
   } else {
     return (
       <Routes>
-        <Route path="/" index element={<Home allMessages = {allMessages} walletAdress={currentAccount} />} />
+        <Route path="/" index element={<Home allMessages = {allMessages} walletAddress={currentAccount} />} />
         <Route path="/created" element={<Created />} />
       </Routes>
     )
