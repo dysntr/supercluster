@@ -1,6 +1,9 @@
 export default function Home(props) {
   const allMessages = props.allMessages;
+  const accountNFTs = props.accountNFTs;
 
+  console.log(accountNFTs);
+  
   return (
     <div>
       {allMessages.map((message, index) => {
