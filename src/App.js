@@ -4,6 +4,10 @@ import { Client } from "@xmtp/xmtp-js";
 import { Wallet, ethers } from "ethers";
 import createMetaMaskProvider from 'metamask-extension-provider'
 import styled from "styled-components";
+import { useMoralisWeb3Api } from "react-moralis"
+
+// Utils
+import getNFTOwners from "./utils/NFT";
 
 // Navigation Imports
 import {Routes, Route} from 'react-router-dom';
@@ -36,7 +40,13 @@ const getProvider = () => {
     }
 }
 
+// Hard-coded NFT Contract Address
+const contractAddress = "0x6301e6278c099613bb9947017f8a21163d130607";
+
 const App = () => {
+  // Moralis Web3Api Instantiation
+  const Web3Api = useMoralisWeb3Api();
+
   // Wallet Setup
   const MINUTE_MS = 10000;
   let xtmp_setup = false;
@@ -44,6 +54,7 @@ const App = () => {
   const [currentAccount, setCurrentAccount] = useState("");
   const [currentXMTP, setCurrentXMTP] = useState([]);
   const [allMessages, setAllMessages] = useState([]);
+  const [accountNFTs, setAccountNFTs] = useState([]);
 
   let web3Provider;
   let wallet;
@@ -92,7 +103,7 @@ const App = () => {
   const getMessages = async (xmtp) => {
     console.log("Getting messages...");
     console.log(" xmtp.conversations.list()", await xmtp.conversations.list());
-    var allMessages = new Array();
+    var allMessages = [];
     for (const conversation of await xmtp.conversations.list()) {
       const messagesInConversation = await conversation.messages();
 
@@ -137,6 +148,8 @@ const App = () => {
       console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
       checkIfXMTPConnected(accounts[0]);
+      
+      setAccountNFTs(await getNFTOwners(Web3Api, accounts[0], contractAddress));
     } catch (error) {
       console.log(error);
     }
@@ -182,7 +195,7 @@ const App = () => {
       <MainContainer>
         <Navigation walletAddress={currentAccount} />
         <Routes>
-          <Route path="/" index element={<Home allMessages = {allMessages} />} />
+          <Route path="/" index element={<Home accountNFTs={accountNFTs} allMessages = {allMessages} />} />
           <Route path="/created" element={<Created />} />
           <Route path="/data" element={<AllData />} />
         </Routes>
