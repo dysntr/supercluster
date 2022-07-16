@@ -8,7 +8,6 @@ export default function Home(props) {
           <div
             key={index}
             style={{
-              backgroundColor: "OldLace",
               marginTop: "16px",
               padding: "8px",
             }}

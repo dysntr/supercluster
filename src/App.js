@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Client } from "@xmtp/xmtp-js";
 import { Wallet, ethers } from "ethers";
 import createMetaMaskProvider from 'metamask-extension-provider'
+import styled from "styled-components";
 
 // Navigation Imports
 import {Routes, Route} from 'react-router-dom';
@@ -12,6 +13,17 @@ import Home from './pages/Home';
 import Created from "./pages/Created";
 import Navigation from "./components/Navigation";
 import AllData from "./pages/AllData";
+import ConnectWallet from "./pages/ConnectWallet";
+
+// Styled Components
+const MainContainer = styled.div`
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  background-color: #262833;
+  color: white;
+  flex-direction: column;
+  text-align: center;
+`
 
 const getProvider = () => {
     if (window.ethereum) {
@@ -160,20 +172,18 @@ const App = () => {
 
   if(!currentAccount) {
     return (
-      <button className="waveButton" onClick={connectWallet}>
-        Connect Wallet
-      </button>
+      <ConnectWallet connectWallet={connectWallet} />
     )
   } else {
     return (
-      <div>
-      <Navigation walletAddress={currentAccount} />
+      <MainContainer>
+        <Navigation walletAddress={currentAccount} />
         <Routes>
           <Route path="/" index element={<Home allMessages = {allMessages} />} />
           <Route path="/created" element={<Created />} />
           <Route path="/data" element={<AllData />} />
         </Routes>
-      </div>
+      </MainContainer>
     )
   }
 };
