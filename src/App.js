@@ -10,6 +10,8 @@ import {Routes, Route} from 'react-router-dom';
 // Components
 import Home from './pages/Home';
 import Created from "./pages/Created";
+import Navigation from "./components/Navigation";
+import AllData from "./pages/AllData";
 
 const getProvider = () => {
     if (window.ethereum) {
@@ -164,10 +166,14 @@ const App = () => {
     )
   } else {
     return (
-      <Routes>
-        <Route path="/" index element={<Home allMessages = {allMessages} walletAddress={currentAccount} />} />
-        <Route path="/created" element={<Created />} />
-      </Routes>
+      <div>
+      <Navigation walletAddress={currentAccount} />
+        <Routes>
+          <Route path="/" index element={<Home allMessages = {allMessages} />} />
+          <Route path="/created" element={<Created />} />
+          <Route path="/data" element={<AllData />} />
+        </Routes>
+      </div>
     )
   }
 };
