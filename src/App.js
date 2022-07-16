@@ -1,9 +1,30 @@
-import logo from "./logo.svg";
 import "./App.css";
 import React, { useEffect, useState } from "react";
 import { Client } from "@xmtp/xmtp-js";
 import { Wallet, ethers } from "ethers";
 import createMetaMaskProvider from 'metamask-extension-provider'
+import styled from "styled-components";
+
+// Navigation Imports
+import {Routes, Route} from 'react-router-dom';
+
+// Components
+import Home from './pages/Home';
+import Created from "./pages/Created";
+import Navigation from "./components/Navigation";
+import AllData from "./pages/AllData";
+import ConnectWallet from "./pages/ConnectWallet";
+
+// Styled Components
+const MainContainer = styled.div`
+  font-family: 'Inter', sans-serif;
+  background-color: #262833;
+  color: white;
+  flex-direction: column;
+  text-align: center;
+  margin: 0;
+  height: 100%;
+`
 
 const getProvider = () => {
     if (window.ethereum) {
@@ -150,39 +171,24 @@ const App = () => {
     // checkIfWalletIsConnected();
   }, []);
 
-  return (
-    <div className="mainContainer">
-      Hi!
-      {!currentAccount && (
-        <button className="waveButton" onClick={connectWallet}>
-          Connect Wallet
-        </button>
-      )}
-      <div styles="overflow-y : scroll; max-height: 200px;">
-        {allMessages.map((message, index) => {
-          return (
-            <div
-              key={index}
-              style={{
-                backgroundColor: "OldLace",
-                marginTop: "16px",
-                padding: "8px",
-              }}
-            >
-              <div>Sender: {message.Sender}</div>
-              <div>Message Hash: {message.Hash}</div>
-              <div>Message: {message.Content}</div>
-            </div>
-          );
-        })}
-      </div>
-      {
-        <button className="SendMessage" onClick={sendMessage}>
-          SendMessage
-        </button>
-      }
-    </div>
-  );
+  if(!currentAccount) {
+    return (
+      <MainContainer>
+        <ConnectWallet connectWallet={connectWallet} />
+      </MainContainer>
+    )
+  } else {
+    return (
+      <MainContainer>
+        <Navigation walletAddress={currentAccount} />
+        <Routes>
+          <Route path="/" index element={<Home allMessages = {allMessages} />} />
+          <Route path="/created" element={<Created />} />
+          <Route path="/data" element={<AllData />} />
+        </Routes>
+      </MainContainer>
+    )
+  }
 };
 
 export default App;
