@@ -18,11 +18,12 @@ import ConnectWallet from "./pages/ConnectWallet";
 // Styled Components
 const MainContainer = styled.div`
   font-family: 'Inter', sans-serif;
-  display: flex;
   background-color: #262833;
   color: white;
   flex-direction: column;
   text-align: center;
+  margin: 0;
+  height: 100%;
 `
 
 const getProvider = () => {
@@ -172,7 +173,9 @@ const App = () => {
 
   if(!currentAccount) {
     return (
-      <ConnectWallet connectWallet={connectWallet} />
+      <MainContainer>
+        <ConnectWallet connectWallet={connectWallet} />
+      </MainContainer>
     )
   } else {
     return (

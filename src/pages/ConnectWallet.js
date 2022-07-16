@@ -1,10 +1,17 @@
+import styled from "styled-components"
+import Button from "../components/Button"
+
+const MainContainer = styled.div`
+  background-color: #262833;
+`
+
 export default function ConnectWallet(props) {
   return (
-    <div>
-      <h1>Connect Wallet screen</h1>
-      <button className="waveButton" onClick={props.connectWallet}>
+    <MainContainer>
+      <h1>👽 Supercluster</h1>
+      <Button onClick={props.connectWallet}>
         Connect Wallet
-      </button>
-    </div>
+      </Button>
+    </MainContainer>
   )
 }
