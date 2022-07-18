@@ -2,7 +2,7 @@ export default async function getNFTOwners(Web3Api, currentAccount, contractAddr
   console.log(currentAccount);
 
   const options = {
-    chain: "mumbai",
+    chain: "polygon",
     address: currentAccount,
     token_address: contractAddress,
   };
