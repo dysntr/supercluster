@@ -1,20 +1,23 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
-import { BrowserRouter } from 'react-router-dom';
-import { MoralisProvider } from 'react-moralis';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+import { BrowserRouter } from "react-router-dom";
+import { MoralisProvider } from "react-moralis";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <React.StrictMode>
-    <MoralisProvider appId={process.env.REACT_APP_MORALIS_APP_ID} serverUrl={process.env.REACT_APP_MORALIS_DAPP_URL}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </MoralisProvider>
-  </React.StrictMode>
+  //<React.StrictMode>
+  <MoralisProvider
+    appId={process.env.REACT_APP_MORALIS_APP_ID}
+    serverUrl={process.env.REACT_APP_MORALIS_DAPP_URL}
+  >
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </MoralisProvider>
+  //</React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function

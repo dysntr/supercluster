@@ -1,4 +1,8 @@
-export default async function getNFTOwners(Web3Api, currentAccount, contractAddress) {
+export default async function getNFTOwners(
+  Web3Api,
+  currentAccount,
+  contractAddress
+) {
   console.log(currentAccount);
 
   const options = {
