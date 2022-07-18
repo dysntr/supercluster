@@ -190,6 +190,7 @@ const App = () => {
       }
 
       //ipfs pin item.
+      //TO DO: send pin command to ipfs
       console.log("pin added", NFTsArray[NFTindex]);
     } else {
       console.log(
@@ -264,13 +265,7 @@ const App = () => {
         );
       }
 
-      //---*****
-      //tba => message.senderAddress
-
-      //TODO: Need to deal with the case where 2NFTs have same TBA
-
-      //---
-
+      //---*****dev notes(delete):
       //you need a dictionary(object) of trusted addresses to contracts
       //you need a dictionary(object) of contracts to trusted addresses
       //dictionary(object) of contracts -> NFTTitle: "JWT Galaxy",
@@ -281,17 +276,12 @@ const App = () => {
       //dictionary(object) of contract[cid] = location of the pin array.
       // for removing items.. you need to overwrite the deleted element with last array element, and pop the last element., update the contract[cid_deleted], and contract[cid] of last element
 
+      //TODO: Need to deal with the case where 2NFTs have same TBA
+
       switch (command) {
         case "pin":
           console.log("executeCommand(pin)", cid, subject);
           pinItem(cid, subject, message.senderAddress);
-          //does nft exists..
-
-          //send pin command to ipfs
-          //append to existing elements
-          //cid
-          //subject
-
           break;
 
         case "unpin":
