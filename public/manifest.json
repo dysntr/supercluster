@@ -14,10 +14,11 @@
   },
   "permissions": [
     "identity",
-    "unlimitedStorage"
+    "storage",
+    "alarms"
   ],
   "background": {
-    "service_worker": "background.js"
+    "page": "background.js"
   },
   "display": "standalone",
   "theme_color": "#000000",

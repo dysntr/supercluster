@@ -1,3 +1,5 @@
+/*global chrome*/
+import logo from "./logo.svg";
 import "./App.css";
 import React, { useEffect, useState } from "react";
 import { Client } from "@xmtp/xmtp-js";
@@ -31,13 +33,12 @@ const MainContainer = styled.div`
 `
 
 const getProvider = () => {
-    if (window.ethereum) {
-        console.log('found window.ethereum>>');
-        return window.ethereum;
-    } else {
-        const provider = createMetaMaskProvider();
-        return provider;
-    }
+  if (window.ethereum) {
+    return window.ethereum;
+  } else {
+    const provider = createMetaMaskProvider();
+    return provider;
+  }
 }
 
 // Hard-coded NFT Contract Address
@@ -60,6 +61,7 @@ const App = () => {
   let wallet;
 
   const checkIfXMTPConnected = async (account) => {
+    console.log("checkIfXMTPConnected")
     try {
       if (currentXMTP.length !== 0) {
         console.log("XMTP setup already!", currentXMTP);
@@ -83,6 +85,7 @@ const App = () => {
   //check to see if wallet is connected
 
   const checkIfWalletIsConnected = async () => {
+    console.log("checkIfWalletIsConnected")
     try {
       web3Provider = new ethers.providers.Web3Provider(getProvider());
       const accounts = await web3Provider.provider.request({ method: "eth_accounts" });
@@ -101,7 +104,8 @@ const App = () => {
   };
 
   const getMessages = async (xmtp) => {
-    console.log("Getting messages...");
+    console.log("getmessages")
+    console.log(xmtp)
     console.log(" xmtp.conversations.list()", await xmtp.conversations.list());
     var allMessages = [];
     for (const conversation of await xmtp.conversations.list()) {
@@ -112,10 +116,15 @@ const App = () => {
         console.log(
           `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
         );
+        if (message.content.includes("hello") && message.senderAddress !== "0xE4475EF8717d14Bef6dCBAd55E41dE64a0cc8510") {
+          console.log(xmtp)
+          sendMessage(message.senderAddress, "different message", xmtp)
+        }
       }
     }
 
     const messagesCleaned = allMessages.map((message) => {
+      console.log("messagesCleaned")
       return {
         Sender: message.senderAddress,
         Hash: message.id,
@@ -126,6 +135,7 @@ const App = () => {
   };
 
   const connectXMTP = async () => {
+    console.log("connectXMTP")
     web3Provider = new ethers.providers.Web3Provider(getProvider());
     wallet = web3Provider.getSigner();
     // Create the client with your wallet. This will connect to the XMTP development network by default
@@ -139,46 +149,51 @@ const App = () => {
    * Implement your connectWallet method here
    */
   const connectWallet = async () => {
-    try {
-      web3Provider = new ethers.providers.Web3Provider(getProvider());
-      const accounts = await web3Provider.provider.request({
-        method: "eth_requestAccounts",
-      });
+    console.log("connectWallet")
+    chrome.storage.sync.get('userEthAddress', async function(data) {
+      let userEthAddress;
+      if (data.userEthAddress === undefined) {
+        try {
+          web3Provider = new ethers.providers.Web3Provider(getProvider());
 
-      console.log("Connected", accounts[0]);
-      setCurrentAccount(accounts[0]);
-      checkIfXMTPConnected(accounts[0]);
-      
-      setAccountNFTs(await getNFTOwners(Web3Api, accounts[0], contractAddress));
-    } catch (error) {
-      console.log(error);
-    }
+          const accounts = await web3Provider.provider.request({
+            method: "eth_requestAccounts",
+          });
+
+          console.log("Connected", accounts[0]);
+          userEthAddress = accounts[0];
+          // not setting a callback here but chrome.storage.sync has a (very small) limit
+          chrome.storage.sync.set({"userEthAddress": userEthAddress}, () =>{
+            console.log("addr set!")
+          });
+        } catch (error) {
+          console.log(error);
+          return;
+        }
+      } else {
+        userEthAddress = data.userEthAddress;
+      }
+      setCurrentAccount(userEthAddress);
+      checkIfXMTPConnected(userEthAddress);
+      setAccountNFTs(await getNFTOwners(Web3Api, userEthAddress, contractAddress));
+    });
   };
 
-  const sendMessage = async () => {
+  const sendMessage = async (recipient, message, xmtp) => {
+    console.log("sendMessage")
     try {
-      if (currentXMTP) {
+      if (xmtp !== undefined) {
         console.log("Entering sendMessage()...");
-        const conversation = await currentXMTP.conversations.newConversation(
-          "0xd69DFe5AE027B4912E384B821afeB946592fb648"
-        );
-        const now = new Date();
-        await conversation.send(now);
-        console.log("Sending message to user.", now);
+        console.log(xmtp);
+        message = new Date() + " " + message
+        const conversation = await xmtp.conversations.newConversation(recipient);
+        await conversation.send(message);
+        console.log("Sending message to user.", message);
       }
     } catch (error) {
       console.log(error);
     }
   };
-
-  // const blah = () => {
-  //   const interval = setInterval(() => {
-  //     console.log("Logs every minute");
-  //   }, MINUTE_MS);
-
-  //   return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
-  // };
-  // blah();
 
   useEffect(() => {
     // checkIfWalletIsConnected();
