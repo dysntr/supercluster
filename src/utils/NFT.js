@@ -7,10 +7,14 @@ export default async function getNFTOwners(Web3Api, currentAccount, contractAddr
     token_address: contractAddress,
   };
 
-  const superclusterNFTs = await Web3Api.account.getNFTsForContract(options);
-  if (superclusterNFTs.result.length > 0) {
-    return superclusterNFTs.result;
-  } else {
-    return null;
+  try {
+    const superclusterNFTs = await Web3Api.account.getNFTsForContract(options);
+    if (superclusterNFTs.result.length > 0) {
+      return superclusterNFTs.result;
+    } else {
+      return null;
+    }
+  } catch(e) {
+    console.error(e);
   }
 }
