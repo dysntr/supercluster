@@ -1,52 +1,46 @@
 import "./App.css";
 import React, { useEffect, useState } from "react";
 import { Client } from "@xmtp/xmtp-js";
-import { Wallet, ethers } from "ethers";
-import createMetaMaskProvider from 'metamask-extension-provider'
+import { ethers } from "ethers";
+import createMetaMaskProvider from "metamask-extension-provider";
 import styled from "styled-components";
-import { useMoralisWeb3Api } from "react-moralis"
-
-// Utils
-import getNFTOwners from "./utils/NFT";
 
 // Navigation Imports
-import {Routes, Route} from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
 
 // Components
-import Home from './pages/Home';
+import Home from "./pages/Home";
 import Created from "./pages/Created";
 import Navigation from "./components/Navigation";
 import AllData from "./pages/AllData";
 import ConnectWallet from "./pages/ConnectWallet";
+import NFTDetail from "./components/followedNFTs/NFTDetail";
 
 // Styled Components
-const MainContainer = styled.div`
-  font-family: 'Inter', sans-serif;
+export const MainContainer = styled.div`
   background-color: #262833;
-  color: white;
-  flex-direction: column;
-  text-align: center;
-  margin: 0;
+  min-height: 100vh;
   height: 100%;
-`
+  width: 100%;
+  font-family: "Inter", sans-serif;
+  background-color: #262833;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+`;
 
 const getProvider = () => {
-    if (window.ethereum) {
-        console.log('found window.ethereum>>');
-        return window.ethereum;
-    } else {
-        const provider = createMetaMaskProvider();
-        return provider;
-    }
-}
-
-// Hard-coded NFT Contract Address
-const contractAddress = "0x6301e6278c099613bb9947017f8a21163d130607";
+  if (window.ethereum) {
+    console.log("found window.ethereum>>");
+    return window.ethereum;
+  } else {
+    const provider = createMetaMaskProvider();
+    return provider;
+  }
+};
 
 const App = () => {
-  // Moralis Web3Api Instantiation
-  const Web3Api = useMoralisWeb3Api();
-
   // Wallet Setup
   const MINUTE_MS = 10000;
   let xtmp_setup = false;
@@ -54,7 +48,6 @@ const App = () => {
   const [currentAccount, setCurrentAccount] = useState("");
   const [currentXMTP, setCurrentXMTP] = useState([]);
   const [allMessages, setAllMessages] = useState([]);
-  const [accountNFTs, setAccountNFTs] = useState([]);
 
   let web3Provider;
   let wallet;
@@ -85,7 +78,9 @@ const App = () => {
   const checkIfWalletIsConnected = async () => {
     try {
       web3Provider = new ethers.providers.Web3Provider(getProvider());
-      const accounts = await web3Provider.provider.request({ method: "eth_accounts" });
+      const accounts = await web3Provider.provider.request({
+        method: "eth_accounts",
+      });
 
       if (accounts.length !== 0) {
         const account = accounts[0];
@@ -103,7 +98,7 @@ const App = () => {
   const getMessages = async (xmtp) => {
     console.log("Getting messages...");
     console.log(" xmtp.conversations.list()", await xmtp.conversations.list());
-    var allMessages = [];
+    var allMessages = new Array();
     for (const conversation of await xmtp.conversations.list()) {
       const messagesInConversation = await conversation.messages();
 
@@ -148,8 +143,6 @@ const App = () => {
       console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
       checkIfXMTPConnected(accounts[0]);
-      
-      setAccountNFTs(await getNFTOwners(Web3Api, accounts[0], contractAddress));
     } catch (error) {
       console.log(error);
     }
@@ -184,23 +177,24 @@ const App = () => {
     // checkIfWalletIsConnected();
   }, []);
 
-  if(!currentAccount) {
+  if (!currentAccount) {
     return (
       <MainContainer>
         <ConnectWallet connectWallet={connectWallet} />
       </MainContainer>
-    )
+    );
   } else {
     return (
       <MainContainer>
         <Navigation walletAddress={currentAccount} />
         <Routes>
-          <Route path="/" index element={<Home accountNFTs={accountNFTs} allMessages = {allMessages} />} />
+          <Route path="/" index element={<Home allMessages={allMessages} />} />
           <Route path="/created" element={<Created />} />
           <Route path="/data" element={<AllData />} />
+          <Route path="/nft/:nftTitle" element={<NFTDetail />} />
         </Routes>
       </MainContainer>
-    )
+    );
   }
 };
 
