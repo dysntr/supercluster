@@ -44,9 +44,6 @@ const getProvider = () => {
   }
 };
 
-// Hard-coded NFT Contract Address
-const contractAddress = "0x57E7546d4AdD5758a61C01b84f0858FA0752e940";
-
 const App = () => {
   // Moralis Web3Api Instantiation
   const Web3Api = useMoralisWeb3Api();
@@ -54,19 +51,10 @@ const App = () => {
   // Wallet Setup
   const MINUTE_MS = 10000;
   let xtmp_setup = false;
-  let xtmp_call = false;
   var Processed = {};
   var runOnce = false;
 
-  var NFTsArray = [
-    {
-      NFTTitle: "JWT Galaxy",
-      NFTImg: "/fakeNFT/galaxies.jpg",
-      contractAddr: "0x57E7546d4AdD5758a61C01b84f0858FA0752e940",
-      trustedAddr: "0xd69DFe5AE027B4912E384B821afeB946592fb648",
-      pinData: [],
-    },
-  ];
+  let NFTsArray = [];
   //mapping objects for updating NFTs Array
 
   var ContractAddresstoTrustedAddress = {};
@@ -80,6 +68,7 @@ const App = () => {
   var CIDtoPinDataArrayIndex = {};
 
   const [currentAccount, setCurrentAccount] = useState("");
+  const [contractAddress, setContractAddress] = useState("0x57E7546d4AdD5758a61C01b84f0858FA0752e940")
   const [currentXMTP, setCurrentXMTP] = useState([]);
   const [allMessages, setAllMessages] = useState([]);
   const [accountNFTs, setAccountNFTs] = useState([]);
@@ -101,8 +90,10 @@ const App = () => {
         setCurrentAccount(accounts[0]);
   
         let receivedNFTs = await getNFTOwners(Web3Api, accounts[0], contractAddress);
-        if (receivedNFTs && receivedNFTs.length > 0) {
-          setAccountNFTs(receivedNFTs);
+
+        if (receivedNFTs.trustedAddr) {
+          // setAccountNFTs(receivedNFTs);
+          NFTsArray = [receivedNFTs];
           checkIfXMTPConnected(accounts[0]);
         } else {
           console.log("The connected account does not have any valid NFTs")
@@ -118,8 +109,7 @@ const App = () => {
         console.log("XMTP setup already!", currentXMTP);
         return;
       } else {
-        if (account && !xtmp_call) {
-          xtmp_call = true;
+        if (account) {
           console.log("Calling connectXMTP()", account);
           connectXMTP();
         } else {
@@ -138,7 +128,6 @@ const App = () => {
     // Create the client with your wallet. This will connect to the XMTP development network by default
     const xmtp = await Client.create(wallet);
     setCurrentXMTP(xmtp);
-    xtmp_call = false;
     getMessages(xmtp);
   };
 
@@ -174,7 +163,10 @@ const App = () => {
       };
     });
     console.log("Cleaned messages:", messagesCleaned);
+
+    // Remove set all messages at this point
     setAllMessages(messagesCleaned);
+
     processMessages(allMessages);
   };
 
@@ -194,6 +186,9 @@ const App = () => {
       //todo: json needs to be set to message.content
       var json =
         '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
+
+      // production - content will be sent in above format
+      // let json = message.content;
 
       var myRegexp, match, command, cid, subject, secretKey;
       //ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e
@@ -282,28 +277,6 @@ const App = () => {
     }
   };
 
-  //check to see if wallet is connected
-
-  const checkIfWalletIsConnected = async () => {
-    try {
-      web3Provider = new ethers.providers.Web3Provider(getProvider());
-      const accounts = await web3Provider.provider.request({
-        method: "eth_accounts",
-      });
-
-      if (accounts.length !== 0) {
-        const account = accounts[0];
-        console.log("Found an authorized account:", account);
-        setCurrentAccount(account);
-        checkIfXMTPConnected(account);
-      } else {
-        console.log("No authorized account found");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const pinItem = async (_cid, _subject, _tba) => {
     console.log("Entering pinItem Function()", _cid, _subject, _tba);
     if (_cid in CIDtoPinDataArrayIndex) {
@@ -344,6 +317,7 @@ const App = () => {
       } else {
         //add a new element to pinData Arry for the nft
         console.log("adding a new element to pinData array.");
+        console.log("NFTsArray during pin add:", NFTsArray)
         pinDataindex = NFTsArray[NFTindex].pinData.length;
         CIDtoPinDataArrayIndex[_cid] = pinDataindex;
       }
@@ -384,6 +358,30 @@ const App = () => {
       return;
     }
   };
+
+  //check to see if wallet is connected
+
+  const checkIfWalletIsConnected = async () => {
+    try {
+      web3Provider = new ethers.providers.Web3Provider(getProvider());
+      const accounts = await web3Provider.provider.request({
+        method: "eth_accounts",
+      });
+
+      if (accounts.length !== 0) {
+        const account = accounts[0];
+        console.log("Found an authorized account:", account);
+        setCurrentAccount(account);
+        checkIfXMTPConnected(account);
+      } else {
+        console.log("No authorized account found");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
 
 
 
@@ -427,7 +425,7 @@ const App = () => {
       <MainContainer>
         <Navigation walletAddress={currentAccount} />
         <Routes>
-          <Route path="/" index element={<Home accountNFTs={accountNFTs} allMessages = {allMessages} />} />
+          <Route path="/" index element={<Home userNFTs={NFTsArray} allMessages = {allMessages} />} />
           <Route path="/created" element={<Created />} />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />

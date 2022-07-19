@@ -61,8 +61,8 @@ const NavLink = styled(Link)`
 
 export default function Navigation(props) {
   const walletAddress = props.walletAddress;
-  const walletStart = walletAddress.slice(0, 2);
-  const walletEnd = walletAddress.slice(35, 40);
+  const walletStart = walletAddress.slice(0, 4);
+  const walletEnd = walletAddress.slice(38, 42);
   const walletTruncated = walletStart + "    ...    " + walletEnd;
 
   return (
