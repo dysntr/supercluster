@@ -4,7 +4,7 @@ import { Client } from "@xmtp/xmtp-js";
 import { ethers } from "ethers";
 import createMetaMaskProvider from "metamask-extension-provider";
 import styled from "styled-components";
-import { useMoralisWeb3Api } from "react-moralis"
+import { useMoralisWeb3Api } from "react-moralis";
 
 // Utils
 import getNFTOwners from "./utils/NFT";
@@ -68,7 +68,9 @@ const App = () => {
   var CIDtoPinDataArrayIndex = {};
 
   const [currentAccount, setCurrentAccount] = useState("");
-  const [contractAddress, setContractAddress] = useState("0x57E7546d4AdD5758a61C01b84f0858FA0752e940")
+  const [contractAddress, setContractAddress] = useState(
+    "0x57E7546d4AdD5758a61C01b84f0858FA0752e940"
+  );
   const [currentXMTP, setCurrentXMTP] = useState([]);
   const [allMessages, setAllMessages] = useState([]);
   const [accountNFTs, setAccountNFTs] = useState([]);
@@ -76,32 +78,36 @@ const App = () => {
   let web3Provider;
   let wallet;
 
-   /**
+  /**
    * Implement your connectWallet method here
    */
-    const connectWallet = async () => {
-      try {
-        web3Provider = new ethers.providers.Web3Provider(getProvider());
-        const accounts = await web3Provider.provider.request({
-          method: "eth_requestAccounts",
-        });
-  
-        console.log("Connected", accounts[0]);
-        setCurrentAccount(accounts[0]);
-  
-        let receivedNFTs = await getNFTOwners(Web3Api, accounts[0], contractAddress);
+  const connectWallet = async () => {
+    try {
+      web3Provider = new ethers.providers.Web3Provider(getProvider());
+      const accounts = await web3Provider.provider.request({
+        method: "eth_requestAccounts",
+      });
 
-        if (receivedNFTs.trustedAddr) {
-          // setAccountNFTs(receivedNFTs);
-          NFTsArray = [receivedNFTs];
-          checkIfXMTPConnected(accounts[0]);
-        } else {
-          console.log("The connected account does not have any valid NFTs")
-        }
-      } catch (error) {
-        console.log(error);
+      console.log("Connected", accounts[0]);
+      setCurrentAccount(accounts[0]);
+
+      let receivedNFTs = await getNFTOwners(
+        Web3Api,
+        accounts[0],
+        contractAddress
+      );
+
+      if (receivedNFTs.trustedAddr) {
+        // setAccountNFTs(receivedNFTs);
+        NFTsArray = [receivedNFTs];
+        checkIfXMTPConnected(accounts[0]);
+      } else {
+        console.log("The connected account does not have any valid NFTs");
       }
-    };
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const checkIfXMTPConnected = async (account) => {
     try {
@@ -238,17 +244,6 @@ const App = () => {
         );
       }
 
-      //---*****dev notes(delete):
-      //you need a dictionary(object) of trusted addresses to contracts
-      //you need a dictionary(object) of contracts to trusted addresses
-      //dictionary(object) of contracts -> NFTTitle: "JWT Galaxy",
-      //dictionary(object) of contracts -> NFTImg: "/fakeNFT/galaxies.jpg",
-      //dictionary(object) of contracts -> date: "/fakeNFT/galaxies.jpg",
-      //CIDtoPinDate
-      //dictionary(object) nft array item location to contracts?
-      //dictionary(object) of contract[cid] = location of the pin array.
-      // for removing items.. you need to overwrite the deleted element with last array element, and pop the last element., update the contract[cid_deleted], and contract[cid] of last element
-
       //TODO: Need to deal with the case where 2NFTs have same TBA
 
       switch (command) {
@@ -259,10 +254,7 @@ const App = () => {
 
         case "unpin":
           console.log("executeCommand(unpin)", cid, subject);
-          //send unpin command to ipfs
-          //remove from existing elements for the nft.
-          //cid
-          //subject
+          unpinItem(cid, message.senderAddress);
           break;
 
         default:
@@ -317,7 +309,7 @@ const App = () => {
       } else {
         //add a new element to pinData Arry for the nft
         console.log("adding a new element to pinData array.");
-        console.log("NFTsArray during pin add:", NFTsArray)
+        console.log("NFTsArray during pin add:", NFTsArray);
         pinDataindex = NFTsArray[NFTindex].pinData.length;
         CIDtoPinDataArrayIndex[_cid] = pinDataindex;
       }
@@ -359,6 +351,74 @@ const App = () => {
     }
   };
 
+  const unpinItem = async (_cid, _tba) => {
+    console.log("Entering unpinItem Function()", _cid, _tba);
+    if (_cid in CIDtoPinDataArrayIndex) {
+      console.log("Working on unpinning _cid..");
+    } else {
+      console.log("_cid not pinned (nothing to unpin)..");
+      return;
+    }
+
+    //update the object mappings
+
+    //get contract address
+    var contractAddress = TrustedAddresstoContractAddress[_tba];
+
+    //check to see if the nft contract is in the list, otherwise return.
+    if (contractAddress in ContractAddresstoNFTArrayIndex) {
+      console.log(
+        "Contract found... Unpinning in progress...",
+        contractAddress
+      );
+
+      var NFTindex = [ContractAddresstoNFTArrayIndex[contractAddress]];
+      console.log("NFTindex", NFTindex);
+
+      var pinDataindex;
+      if (_cid in CIDtoPinDataArrayIndex) {
+        console.log("Found _cid element in pinData array.");
+        pinDataindex = CIDtoPinDataArrayIndex[_cid];
+        console.log("pinDataindex", pinDataindex);
+      } else {
+        //add a new element to pinData Arry for the nft
+        console.log("cid index not found. nothing to unpin.");
+        return;
+      }
+
+      //the index for the last element in the pinData array
+      var pinDataLastIndex = NFTsArray[NFTindex].pinData.length - 1;
+
+      if (pinDataindex == pinDataLastIndex) {
+        //if the item we're unpinning is the last element of array
+        delete NFTsArray[NFTindex].pinData.pop();
+      } else {
+        //copy the last element of the array to the item that is being unpinned
+        //update the CIDtoPinDataArrayIndex
+        //delete the last element of the array
+        NFTsArray[NFTindex].pinData[pinDataindex] =
+          NFTsArray[NFTindex].pinData[pinDataLastIndex];
+
+        CIDtoPinDataArrayIndex[
+          [NFTsArray[NFTindex].pinData[pinDataindex].CID]
+        ] = pinDataindex;
+
+        delete NFTsArray[NFTindex].pinData.pop();
+      }
+
+      //delete cid from mapping objects
+      delete CIDtoContractAddress[_cid];
+      delete CIDtoPinDataArrayIndex[_cid];
+
+      //ipfs unpin item.
+      //TO DO: send unpin command to ipfs
+      console.log("item unpinned", NFTsArray[NFTindex]);
+    } else {
+      console.log("Error - unpin error, no such contract found.");
+      return;
+    }
+  };
+
   //check to see if wallet is connected
 
   const checkIfWalletIsConnected = async () => {
@@ -380,10 +440,6 @@ const App = () => {
       console.log(error);
     }
   };
-
-
-
-
 
   const sendMessage = async () => {
     try {
@@ -425,7 +481,11 @@ const App = () => {
       <MainContainer>
         <Navigation walletAddress={currentAccount} />
         <Routes>
-          <Route path="/" index element={<Home userNFTs={NFTsArray} allMessages = {allMessages} />} />
+          <Route
+            path="/"
+            index
+            element={<Home userNFTs={NFTsArray} allMessages={allMessages} />}
+          />
           <Route path="/created" element={<Created />} />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />
