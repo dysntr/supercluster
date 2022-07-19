@@ -1,4 +1,4 @@
-async function getTodayDate() {
+function getTodayDate() {
   try {
     let date = new Date();
     let dateString =
@@ -7,12 +7,13 @@ async function getTodayDate() {
       ("0" + date.getDate().toString()).substr(-2) +
       "/" +
       date.getFullYear().toString().substr(2);
+    return dateString;
   } catch (e) {
     console.error(e);
   }
 }
 
-async function fillNftArrayWithTestData() {
+function fillNftArrayWithTestData() {
   try {
     console.log("Filling NFTsArray with test data");
     let NFTsArray = {};
@@ -35,9 +36,9 @@ async function fillNftArrayWithTestData() {
     ] = 0;
 
     return {
-      NFTsArray,
-      TrustedAddressToContractAddress,
-      ContractAddressToNFTArrayIndex,
+      NFTsArray: NFTsArray,
+      TrustedAddressToContractAddress: TrustedAddressToContractAddress,
+      ContractAddressToNFTArrayIndex: ContractAddressToNFTArrayIndex,
     };
   } catch (e) {
     console.error(e);
