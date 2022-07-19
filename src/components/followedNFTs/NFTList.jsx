@@ -33,16 +33,19 @@ const List = styled.div`
   padding-top: 2em;
 `;
 
-const NFTList = () => {
-  const MappedNFTs = fakeNFTs.map((nft) => {
+const NFTList = (props) => {
+  // const userNFTs = props.userNFTs;
+
+  const MappedNFTs = fakeNFTs.map((nft, i) => {
     return (
       <Link
         to={{ pathname: `/nft/${nft.contractAddr}` }}
         state={{
           nft: nft,
         }}
+        key={i}
       >
-        <NFT key={nft.NFTTitle}>
+        <NFT>
           <NFTImg src={nft.NFTImg} />
           <NFTTitle>{nft.NFTTitle}</NFTTitle>
         </NFT>
