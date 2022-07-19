@@ -3,7 +3,7 @@ export default async function getNFTOwners(
   currentAccount,
   contractAddress
 ) {
-  console.log(currentAccount);
+  //console.log(currentAccount);
 
   const options = {
     chain: "polygon",
@@ -42,7 +42,6 @@ export default async function getNFTOwners(
 
       return nftObject;
     } else {
-      console.log(superclusterNFTs);
       return null;
     }
   } catch (e) {

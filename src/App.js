@@ -8,7 +8,7 @@ import { useMoralisWeb3Api } from "react-moralis";
 
 // Utils
 import getNFTOwners from "./utils/NFT";
-import getTodayDate from "./utils/Misc";
+import { fillNftArrayWithTestData, getTodayDate, colorLog } from "./utils/Misc";
 
 // Navigation Imports
 import { Routes, Route } from "react-router-dom";
@@ -20,6 +20,7 @@ import Navigation from "./components/Navigation";
 import AllData from "./pages/AllData";
 import ConnectWallet from "./pages/ConnectWallet";
 import NFTDetail from "./components/followedNFTs/NFTDetail";
+import { tab } from "@testing-library/user-event/dist/tab";
 
 // Styled Components
 export const MainContainer = styled.div`
@@ -77,12 +78,14 @@ const App = () => {
    */
   const connectWallet = async () => {
     try {
+      colorLog(1, "Entering connectWallet");
       web3Provider = new ethers.providers.Web3Provider(getProvider());
       const accounts = await web3Provider.provider.request({
         method: "eth_requestAccounts",
       });
 
-      console.log("Connected", accounts[0]);
+      colorLog(2, "Connected", accounts[0]);
+
       setCurrentAccount(accounts[0]);
 
       let receivedNFTs = await getNFTOwners(
@@ -93,44 +96,35 @@ const App = () => {
 
       if (receivedNFTs == null) {
         console.log("The connected account does not have any valid NFTs");
-        fillNftArrayWithTestData();
+
+        colorLog(3, "Calling fillNftArrayWithTestData()");
+        ({
+          NFTsArray,
+          TrustedAddressToContractAddress,
+          ContractAddressToNFTArrayIndex,
+        } = await fillNftArrayWithTestData());
       } else {
         if (receivedNFTs.trustedAddr !== null) {
+          colorLog(3, "Calling processNFTMetadata()");
           processNFTMetadata([receivedNFTs]);
         } else {
           console.log("Error - NFT does not have a trusted broadcast address.");
         }
       }
-      console.log("connectWallet", NFTsArray);
+
+      colorLog(3, "Calling checkIfXMTPConnected()");
       checkIfXMTPConnected(accounts[0]);
+
+      colorLog(1, "Exiting connectWallet");
     } catch (error) {
       console.log(error);
     }
   };
 
-  const fillNftArrayWithTestData = async () => {
-    console.log("Filling NFTsArray with test data");
-    NFTsArray = [
-      {
-        NFTTitle: "JWT Galaxy",
-        NFTImg: "/fakeNFT/galaxies.jpg",
-        contractAddr: "0x57E7546d4AdD5758a61C01b84f0858FA0752e940",
-        trustedAddr: "0xd69DFe5AE027B4912E384B821afeB946592fb648",
-        pinData: [],
-      },
-    ];
-    TrustedAddressToContractAddress[
-      "0xd69DFe5AE027B4912E384B821afeB946592fb648"
-    ] = "0x57e7546d4add5758a61c01b84f0858fa0752e940";
-    ContractAddressToNFTArrayIndex[
-      "0x57e7546d4add5758a61c01b84f0858fa0752e940"
-    ] = 0;
-  };
-
   //expects an array of NFTMetadata of all the nfts to add for follower
   const processNFTMetadata = async (NFTMetadata) => {
+    colorLog(1, "Entering processNFTMetadata");
     let x = 0;
-    console.log("processNFTMetadata", NFTMetadata);
     for (const NFT of NFTMetadata) {
       let NftContractAddr = NFT.contractAddr;
       let NftTrustedAddr = NFT.trustedAddr;
@@ -139,38 +133,52 @@ const App = () => {
       TrustedAddressToContractAddress[NftTrustedAddr] = NftContractAddr;
       x++;
     }
+    console.log("NFTsArray", NFTsArray);
+    colorLog(1, "Exiting processNFTMetadata");
   };
 
   const checkIfXMTPConnected = async (account) => {
     try {
+      colorLog(1, "Entering checkIfXMTPConnected");
       if (currentXMTP.length !== 0) {
         console.log("XMTP setup already!", currentXMTP);
         return;
       } else {
         if (account) {
-          console.log("Calling connectXMTP()", account);
+          console.log(
+            "checkIfXMTPConnected() - Calling connectXMTP() (account): ",
+            account
+          );
+          colorLog(3, "Calling connectXMTP()");
           connectXMTP();
         } else {
           console.log("Ethereum wallet needs to be configured");
           return;
         }
       }
+      colorLog(1, "Exiting checkIfXMTPConnected");
     } catch (error) {
       console.log(error);
     }
   };
 
   const connectXMTP = async () => {
+    colorLog(1, "Entering connectXMTP");
     web3Provider = new ethers.providers.Web3Provider(getProvider());
     wallet = web3Provider.getSigner();
     // Create the client with your wallet. This will connect to the XMTP development network by default
     const xmtp = await Client.create(wallet);
     setCurrentXMTP(xmtp);
+
+    colorLog(3, "Calling getMessages()");
     getMessages(xmtp);
+
+    colorLog(1, "Exiting connectXMTP");
   };
 
   const getMessages = async (xmtp) => {
-    console.log("Getting messages...");
+    colorLog(1, "Entering getMessages");
+
     console.log(" xmtp.conversations.list()", await xmtp.conversations.list());
     let allMessages = [];
 
@@ -211,7 +219,10 @@ const App = () => {
     // Remove set all messages at this point
     setAllMessages(messagesCleaned);
 
+    colorLog(3, "Calling processMessages()");
     processMessages(allMessages);
+
+    colorLog(1, "Exiting getMessages");
   };
 
   const processMessages = async (_allMessages) => {
@@ -220,12 +231,19 @@ const App = () => {
     //get cid
     //get message
     //format {command:"","cid":"","subject":""}
-    console.log("Entering processMessages");
+
+    colorLog(1, "Entering processMessages");
 
     for (const message of _allMessages) {
       if (message.id in Processed) {
         return;
       }
+
+      colorLog(
+        2,
+        "Processing message from Trusted Broadcast Address(message.id):",
+        message.id
+      );
 
       //todo: json needs to be set to message.content
       let json =
@@ -246,7 +264,8 @@ const App = () => {
           "No command match in message from Trusted Broadcast Address. skipping message.(message.id): ",
           message.id
         );
-        console.log("Breaking out of processMessages");
+
+        colorLog(1, "Exiting processMessages");
         Processed[message.id] = true;
         return;
       }
@@ -290,12 +309,12 @@ const App = () => {
 
       switch (command) {
         case "pin":
-          console.log("executeCommand(pin)", cid, subject);
+          colorLog(3, "Calling pinItem()", cid, subject, message.senderAddress);
           pinItem(cid, subject, message.senderAddress);
           break;
 
         case "unpin":
-          console.log("executeCommand(unpin)", cid, subject);
+          colorLog(3, "Calling unpinItem()", cid, message.senderAddress);
           unpinItem(cid, message.senderAddress);
           break;
 
@@ -307,14 +326,16 @@ const App = () => {
       //if processed
       Processed[message.id] = true;
     }
-    console.log("Exiting processMessages");
+    colorLog(1, "Exiting processMessages");
   };
 
   const pinItem = async (_cid, _subject, _tba) => {
-    console.log("Entering pinItem Function()", _cid, _subject, _tba);
+    colorLog(1, "Entering pinItem", _cid, _subject, _tba);
+
     if (_cid in CIDtoPinDataArrayIndex) {
       //A CID can only be pinned in one collection.
       console.log("_cid was previously pinned.");
+      colorLog(1, "Exiting pinItem");
       return;
     }
 
@@ -378,6 +399,7 @@ const App = () => {
       //IPFS pin item.
       //TO DO: send pin command to IPFS
       console.log("Pin added", NFTsArray[NFTIndex]);
+      colorLog(1, "Exiting pinItem");
     } else {
       console.log(
         "Error - An Item was not pinned because the NFT is not added."
@@ -387,11 +409,13 @@ const App = () => {
   };
 
   const unpinItem = async (_cid, _tba) => {
-    console.log("Entering unpinItem Function()", _cid, _tba);
+    colorLog(1, "Entering unpinItem", _cid, _tba);
     if (_cid in CIDtoPinDataArrayIndex) {
       console.log("Working on unpinning _cid..");
     } else {
       console.log("_cid not pinned (nothing to unpin)..");
+      colorLog(1, "Exiting unpinItem");
+
       return;
     }
 
@@ -448,8 +472,11 @@ const App = () => {
       //ipfs unpin item.
       //TO DO: send unpin command to ipfs
       console.log("item unpinned", NFTsArray[NFTIndex]);
+
+      colorLog(1, "Exiting unpinItem");
     } else {
       console.log("Error - unpin error, no such contract found.");
+      console.log("Exiting unpinItem");
       return;
     }
   };
@@ -458,6 +485,7 @@ const App = () => {
 
   const checkIfWalletIsConnected = async () => {
     try {
+      colorLog(1, "Entering checkIfWalletIsConnected");
       web3Provider = new ethers.providers.Web3Provider(getProvider());
       const accounts = await web3Provider.provider.request({
         method: "eth_accounts",
@@ -467,10 +495,12 @@ const App = () => {
         const account = accounts[0];
         console.log("Found an authorized account:", account);
         setCurrentAccount(account);
+        colorLog(3, "Calling checkIfXMTPConnected()");
         checkIfXMTPConnected(account);
       } else {
         console.log("No authorized account found");
       }
+      colorLog(1, "Exiting checkIfWalletIsConnected");
     } catch (error) {
       console.log(error);
     }
@@ -479,14 +509,16 @@ const App = () => {
   const sendMessage = async () => {
     try {
       if (currentXMTP) {
-        console.log("Entering sendMessage()...");
+        colorLog(1, "Entering sendMessage");
         const conversation = await currentXMTP.conversations.newConversation(
           "0xd69DFe5AE027B4912E384B821afeB946592fb648"
         );
         const now = new Date();
         await conversation.send(now);
-        console.log("Sending message to user.", now);
+
+        colorLog(2, "Sending message to user", now);
       }
+      colorLog(1, "Exiting sendMessage");
     } catch (error) {
       console.log(error);
     }
