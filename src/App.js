@@ -50,7 +50,7 @@ const App = () => {
   const Web3Api = useMoralisWeb3Api();
 
   // Wallet Setup
-  const POLLTIME_MS = 10000;
+  const POLLTIME_MS = 30000;
   let Processed = {};
 
   let NFTsArray = [];
@@ -173,8 +173,15 @@ const App = () => {
     console.log("Getting messages...");
     console.log(" xmtp.conversations.list()", await xmtp.conversations.list());
     let allMessages = [];
+
+    const opts = {
+      // Only show messages from 7 day(s)
+      startTime: new Date(new Date().setDate(new Date().getDate() - 7)),
+      endTime: new Date(),
+    };
+
     for (const conversation of await xmtp.conversations.list()) {
-      const messagesInConversation = await conversation.messages();
+      const messagesInConversation = await conversation.messages(opts);
 
       for await (const message of messagesInConversation) {
         //TODO: sanitize all message.content prior to printing out or processing.
@@ -185,7 +192,7 @@ const App = () => {
         );
 
         //check to see if message is from trusted broadcast address
-        if (TrustedAddressToContractAddress[message.senderAddress] !== null) {
+        if (message.senderAddress in TrustedAddressToContractAddress) {
           console.log("Message added from tba.", message.senderAddress);
           allMessages.push(message);
         }
@@ -285,8 +292,6 @@ const App = () => {
         case "pin":
           console.log("executeCommand(pin)", cid, subject);
           pinItem(cid, subject, message.senderAddress);
-          pinItem("testCid2", "testSubjectCid2", message.senderAddress);
-          unpinItem(cid, message.senderAddress);
           break;
 
         case "unpin":
@@ -302,7 +307,7 @@ const App = () => {
       //if processed
       Processed[message.id] = true;
     }
-    console.log("Breaking out of processMessages");
+    console.log("Exiting processMessages");
   };
 
   const pinItem = async (_cid, _subject, _tba) => {
@@ -332,21 +337,31 @@ const App = () => {
       let pinDataIndex;
       if (_cid in CIDtoPinDataArrayIndex) {
         //pin data already exist, need to update subject
-        console.log("updating element in pinData array.");
+
         pinDataIndex = CIDtoPinDataArrayIndex[_cid];
+        console.log(
+          "Getting pinDataIndex for updating an element (NFTIndex,pinDataIndex ).",
+          NFTIndex,
+          pinDataIndex
+        );
       } else {
         //add a new element to pinData Array for the nft
-        console.log("adding a new element to pinData array.");
-        console.log("NFTsArray during pin add:", NFTsArray[NFTIndex]);
+
+        //console.log("NFTsArray during pin add:", NFTsArray[NFTIndex]);
         pinDataIndex = NFTsArray[NFTIndex].pinData.length;
         CIDtoPinDataArrayIndex[_cid] = pinDataIndex;
+
+        console.log(
+          "Getting pinDataIndex for adding a new element (NFTIndex, pinDataIndex):",
+          NFTIndex,
+          pinDataIndex
+        );
       }
-      console.log("pinDataIndex", pinDataIndex);
 
       let today = getTodayDate();
 
       if (NFTsArray[NFTIndex].pinData[pinDataIndex] == null) {
-        console.log("adding new element to array...");
+        console.log("Adding new element to Array...");
 
         NFTsArray[NFTIndex].pinData.push({
           subject: _subject,
@@ -354,7 +369,7 @@ const App = () => {
           date: today,
         });
       } else {
-        console.log("updating existing element in array...");
+        console.log("Updating existing element in array...");
         NFTsArray[NFTIndex].pinData[pinDataIndex].subject = _subject;
         NFTsArray[NFTIndex].pinData[pinDataIndex].CID = _cid;
         NFTsArray[NFTIndex].pinData[pinDataIndex].date = today;
@@ -362,7 +377,7 @@ const App = () => {
 
       //IPFS pin item.
       //TO DO: send pin command to IPFS
-      console.log("pin added", NFTsArray[NFTIndex]);
+      console.log("Pin added", NFTsArray[NFTIndex]);
     } else {
       console.log(
         "Error - An Item was not pinned because the NFT is not added."
@@ -477,14 +492,17 @@ const App = () => {
     }
   };
 
-  // const blah = () => {
+  // const poll = () => {
   //   const interval = setInterval(() => {
-  //     console.log("Logs every minute");
-  //   }, POLLTIME_MS );
+  //     if (currentXMTP.length !== 0) {
+  //       getMessages(currentXMTP);
+  //     }
+  //     console.log("Poll every ", POLLTIME_MS / 60000, " minute(s).");
+  //   }, POLLTIME_MS);
 
   //   return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
   // };
-  // blah();
+  // poll();
 
   useEffect(() => {
     // checkIfWalletIsConnected();
