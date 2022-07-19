@@ -52,15 +52,6 @@ const App = () => {
 
   // Wallet Setup
   const POLLTIME_MS = 30000;
-  let Processed = {};
-
-  let NFTsArray = [];
-
-  //mapping objects for updating NFTs Array
-  let TrustedAddressToContractAddress = {};
-  let ContractAddressToNFTArrayIndex = {};
-  let CIDtoContractAddress = {};
-  let CIDtoPinDataArrayIndex = {};
 
   const [currentAccount, setCurrentAccount] = useState("");
   const [contractAddress, setContractAddress] = useState(
@@ -68,7 +59,16 @@ const App = () => {
   );
   const [currentXMTP, setCurrentXMTP] = useState([]);
   const [allMessages, setAllMessages] = useState([]);
-  const [accountNFTs, setAccountNFTs] = useState([]);
+  const [NFTsArray, setNFTsArray] = useState([]);
+  const [processingObject, setProcessingObject] = useState([
+    {
+      TrustedAddressToContractAddress: {},
+      ContractAddressToNFTArrayIndex: {},
+      CIDtoContractAddress: {},
+      CIDtoPinDataArrayIndex: {},
+      isMessageProcessed: {},
+    },
+  ]);
 
   let web3Provider;
   let wallet;
@@ -85,32 +85,7 @@ const App = () => {
       });
 
       colorLog(2, "Connected", accounts[0]);
-
       setCurrentAccount(accounts[0]);
-
-      let receivedNFTs = await getNFTOwners(
-        Web3Api,
-        accounts[0],
-        contractAddress
-      );
-
-      if (receivedNFTs == null) {
-        console.log("The connected account does not have any valid NFTs");
-
-        colorLog(3, "Calling fillNftArrayWithTestData()");
-        ({
-          NFTsArray,
-          TrustedAddressToContractAddress,
-          ContractAddressToNFTArrayIndex,
-        } = await fillNftArrayWithTestData());
-      } else {
-        if (receivedNFTs.trustedAddr !== null) {
-          colorLog(3, "Calling processNFTMetadata()");
-          processNFTMetadata([receivedNFTs]);
-        } else {
-          console.log("Error - NFT does not have a trusted broadcast address.");
-        }
-      }
 
       colorLog(3, "Calling checkIfXMTPConnected()");
       checkIfXMTPConnected(accounts[0]);
@@ -119,22 +94,6 @@ const App = () => {
     } catch (error) {
       console.log(error);
     }
-  };
-
-  //expects an array of NFTMetadata of all the nfts to add for follower
-  const processNFTMetadata = async (NFTMetadata) => {
-    colorLog(1, "Entering processNFTMetadata");
-    let x = 0;
-    for (const NFT of NFTMetadata) {
-      let NftContractAddr = NFT.contractAddr;
-      let NftTrustedAddr = NFT.trustedAddr;
-      NFTsArray[x] = NFT;
-      ContractAddressToNFTArrayIndex[NftContractAddr] = x;
-      TrustedAddressToContractAddress[NftTrustedAddr] = NftContractAddr;
-      x++;
-    }
-    console.log("NFTsArray", NFTsArray);
-    colorLog(1, "Exiting processNFTMetadata");
   };
 
   const checkIfXMTPConnected = async (account) => {
@@ -170,17 +129,128 @@ const App = () => {
     const xmtp = await Client.create(wallet);
     setCurrentXMTP(xmtp);
 
-    colorLog(3, "Calling getMessages()");
-    getMessages(xmtp);
-
     colorLog(1, "Exiting connectXMTP");
   };
 
-  const getMessages = async (xmtp) => {
+  const getNFTMetaData = async () => {
+    colorLog(1, "Entering getNFTMetaData");
+
+    colorLog(3, "Entering getNFTOwners()", currentAccount);
+    let receivedNFTs = await getNFTOwners(
+      Web3Api,
+      currentAccount,
+      contractAddress
+    );
+    if (receivedNFTs == null) {
+      console.log("The connected account does not have any valid NFTs");
+
+      colorLog(3, "Calling fillNftArrayWithTestData()");
+
+      let _NFTsArray,
+        _TrustedAddressToContractAddress,
+        _ContractAddressToNFTArrayIndex;
+
+      let results = fillNftArrayWithTestData();
+      _NFTsArray = results.NFTsArray;
+      _TrustedAddressToContractAddress =
+        results.TrustedAddressToContractAddress;
+      _ContractAddressToNFTArrayIndex = results.ContractAddressToNFTArrayIndex;
+
+      console.log("****NFTsArray ", _NFTsArray);
+      console.log(
+        "****processingObject ",
+        _TrustedAddressToContractAddress,
+        _ContractAddressToNFTArrayIndex
+      );
+
+      setNFTsArray(_NFTsArray);
+      setProcessingObject((prevState) => ({
+        ...prevState,
+        TrustedAddressToContractAddress: _TrustedAddressToContractAddress,
+        ContractAddressToNFTArrayIndex: _ContractAddressToNFTArrayIndex,
+      }));
+    } else {
+      if (receivedNFTs.trustedAddr !== null) {
+        colorLog(3, "Calling processNFTMetadata()");
+        processNFTMetadata([receivedNFTs]);
+      } else {
+        console.log("Error - NFT does not have a trusted broadcast address.");
+      }
+    }
+    colorLog(1, "Exiting getNFTMetaData");
+  };
+
+  const processNFTMetadata = async (NFTMetadata) => {
+    colorLog(1, "Entering processNFTMetadata");
+    let x = 0;
+    let _ContractAddressToNFTArrayIndex = {};
+    let _TrustedAddressToContractAddress = {};
+    let _NFTsArray = {};
+    for (const NFT of NFTMetadata) {
+      let NftContractAddr = NFT.contractAddr;
+      let NftTrustedAddr = NFT.trustedAddr;
+      _NFTsArray[x] = NFT;
+      _ContractAddressToNFTArrayIndex[NftContractAddr] = x;
+      _TrustedAddressToContractAddress[NftTrustedAddr] = NftContractAddr;
+      x++;
+    }
+
+    setNFTsArray(_NFTsArray);
+    setProcessingObject((prevState) => ({
+      ...prevState,
+      TrustedAddressToContractAddress: _TrustedAddressToContractAddress,
+      ContractAddressToNFTArrayIndex: _ContractAddressToNFTArrayIndex,
+    }));
+    console.log("_NFTsArray", _NFTsArray);
+    console.log(
+      "_TrustedAddressToContractAddress",
+      _TrustedAddressToContractAddress
+    );
+    console.log(
+      "_ContractAddressToNFTArrayIndex",
+      _ContractAddressToNFTArrayIndex
+    );
+
+    colorLog(1, "Exiting processNFTMetadata");
+  };
+
+  //if a new NFT is added or XMTP connection established, then get messages.
+  useEffect(() => {
+    if (
+      currentXMTP.length != 0 &&
+      processingObject.TrustedAddressToContractAddress.length != 0
+    ) {
+      console.log("New processingObject or currentXMTP detected.");
+      colorLog(3, "Calling getMessages()");
+      getMessages();
+    }
+  }, [processingObject.TrustedAddressToContractAddress, currentXMTP]);
+
+  //if currentAccount is updated, getNFTMetaData for new account
+  useEffect(() => {
+    if (currentAccount.length != 0) {
+      console.log("New Account Detected:", currentAccount);
+      colorLog(3, "Calling getNFTMetaData()");
+      getNFTMetaData();
+    }
+  }, [currentAccount]);
+
+  const getMessages = async () => {
     colorLog(1, "Entering getMessages");
 
-    console.log(" xmtp.conversations.list()", await xmtp.conversations.list());
+    console.log(
+      " xmtp.conversations.list()",
+      await currentXMTP.conversations.list()
+    );
     let allMessages = [];
+
+    let _TrustedAddressToContractAddress =
+      processingObject.TrustedAddressToContractAddress;
+
+    console.log(
+      "_TrustedAddressToContractAddress",
+      _TrustedAddressToContractAddress
+    );
 
     const opts = {
       // Only show messages from 7 day(s)
@@ -188,7 +258,7 @@ const App = () => {
       endTime: new Date(),
     };
 
-    for (const conversation of await xmtp.conversations.list()) {
+    for (const conversation of await currentXMTP.conversations.list()) {
       const messagesInConversation = await conversation.messages(opts);
 
       for await (const message of messagesInConversation) {
@@ -200,7 +270,7 @@ const App = () => {
         );
 
         //check to see if message is from trusted broadcast address
-        if (message.senderAddress in TrustedAddressToContractAddress) {
+        if (message.senderAddress in _TrustedAddressToContractAddress) {
           console.log("Message added from tba.", message.senderAddress);
           allMessages.push(message);
         }
@@ -209,9 +279,9 @@ const App = () => {
 
     const messagesCleaned = allMessages.map((message) => {
       return {
-        Sender: message.senderAddress,
-        Hash: message.id,
-        Content: message.content,
+        senderAddress: message.senderAddress,
+        id: message.id,
+        content: message.content,
       };
     });
     console.log("Cleaned messages:", messagesCleaned);
@@ -221,6 +291,8 @@ const App = () => {
 
     colorLog(3, "Calling processMessages()");
     processMessages(allMessages);
+
+    console.log("NFTsArray", NFTsArray);
 
     colorLog(1, "Exiting getMessages");
   };
@@ -232,10 +304,20 @@ const App = () => {
     //get message
     //format {command:"","cid":"","subject":""}
 
+    if (!processingObject.hasOwnProperty("isMessageProcessed")) {
+      processingObject.isMessageProcessed = {};
+    }
+
+    let _isMessageProcessed = processingObject.isMessageProcessed;
+
+    console.log(_isMessageProcessed);
     colorLog(1, "Entering processMessages");
 
     for (const message of _allMessages) {
-      if (message.id in Processed) {
+      if (
+        typeof _isMessageProcessed !== "undefined" &&
+        message.id in _isMessageProcessed
+      ) {
         return;
       }
 
@@ -266,8 +348,9 @@ const App = () => {
         );
 
         colorLog(1, "Exiting processMessages");
-        Processed[message.id] = true;
-        return;
+        _isMessageProcessed[message.id] = true;
+
+        continue;
       }
 
       //ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e
@@ -311,6 +394,8 @@ const App = () => {
         case "pin":
           colorLog(3, "Calling pinItem()", cid, subject, message.senderAddress);
           pinItem(cid, subject, message.senderAddress);
+          pinItem("testcid2", "testsubject2", message.senderAddress);
+          unpinItem(cid, message.senderAddress);
           break;
 
         case "unpin":
@@ -324,15 +409,48 @@ const App = () => {
       }
 
       //if processed
-      Processed[message.id] = true;
+      _isMessageProcessed[message.id] = true;
     }
+
+    setProcessingObject((prevState) => ({
+      ...prevState,
+      isMessageProcessed: _isMessageProcessed,
+    }));
+
     colorLog(1, "Exiting processMessages");
   };
 
   const pinItem = async (_cid, _subject, _tba) => {
     colorLog(1, "Entering pinItem", _cid, _subject, _tba);
 
-    if (_cid in CIDtoPinDataArrayIndex) {
+    let _TrustedAddressToContractAddress =
+      processingObject.TrustedAddressToContractAddress;
+    let _ContractAddressToNFTArrayIndex =
+      processingObject.ContractAddressToNFTArrayIndex;
+
+    if (!processingObject.hasOwnProperty("CIDtoContractAddress")) {
+      processingObject.CIDtoContractAddress = {};
+    }
+
+    if (!processingObject.hasOwnProperty("CIDtoPinDataArrayIndex")) {
+      processingObject.CIDtoPinDataArrayIndex = {};
+    }
+
+    let _CIDtoPinDataArrayIndex = processingObject.CIDtoPinDataArrayIndex;
+    let _CIDtoContractAddress = processingObject.CIDtoContractAddress;
+
+    console.log(
+      "processingObject.CIDtoContractAddress",
+      processingObject.CIDtoContractAddress
+    );
+    console.log("_CIDtoContractAddress", _CIDtoContractAddress);
+
+    let _NFTsArray = NFTsArray;
+
+    if (
+      typeof _CIDtoPinDataArrayIndex !== "undefined" &&
+      _cid in _CIDtoPinDataArrayIndex
+    ) {
       //A CID can only be pinned in one collection.
       console.log("_cid was previously pinned.");
       colorLog(1, "Exiting pinItem");
@@ -341,25 +459,28 @@ const App = () => {
 
     //update the mapping objects
     //get contract address
-    let contractAddress = TrustedAddressToContractAddress[_tba];
+    let contractAddress = _TrustedAddressToContractAddress[_tba];
 
     //if the NFT has already been added continue, otherwise return.
-    if (contractAddress in ContractAddressToNFTArrayIndex) {
+    if (contractAddress in _ContractAddressToNFTArrayIndex) {
       console.log(
         "Working on adding a new pin for existing nft collection to follower console."
       );
 
-      CIDtoContractAddress[_cid] = contractAddress;
+      console.log("_cid", _cid);
+      console.log("contractAddress", contractAddress);
 
-      let NFTIndex = [ContractAddressToNFTArrayIndex[contractAddress]];
+      _CIDtoContractAddress[_cid] = contractAddress;
+
+      let NFTIndex = [_ContractAddressToNFTArrayIndex[contractAddress]];
 
       console.log("NFTIndex", NFTIndex);
 
       let pinDataIndex;
-      if (_cid in CIDtoPinDataArrayIndex) {
+      if (_cid in _CIDtoPinDataArrayIndex) {
         //pin data already exist, need to update subject
 
-        pinDataIndex = CIDtoPinDataArrayIndex[_cid];
+        pinDataIndex = _CIDtoPinDataArrayIndex[_cid];
         console.log(
           "Getting pinDataIndex for updating an element (NFTIndex,pinDataIndex ).",
           NFTIndex,
@@ -370,7 +491,7 @@ const App = () => {
 
         //console.log("NFTsArray during pin add:", NFTsArray[NFTIndex]);
         pinDataIndex = NFTsArray[NFTIndex].pinData.length;
-        CIDtoPinDataArrayIndex[_cid] = pinDataIndex;
+        _CIDtoPinDataArrayIndex[_cid] = pinDataIndex;
 
         console.log(
           "Getting pinDataIndex for adding a new element (NFTIndex, pinDataIndex):",
@@ -381,24 +502,34 @@ const App = () => {
 
       let today = getTodayDate();
 
-      if (NFTsArray[NFTIndex].pinData[pinDataIndex] == null) {
+      if (_NFTsArray[NFTIndex].pinData[pinDataIndex] == null) {
         console.log("Adding new element to Array...");
 
-        NFTsArray[NFTIndex].pinData.push({
+        _NFTsArray[NFTIndex].pinData.push({
           subject: _subject,
           CID: _cid,
           date: today,
         });
       } else {
         console.log("Updating existing element in array...");
-        NFTsArray[NFTIndex].pinData[pinDataIndex].subject = _subject;
-        NFTsArray[NFTIndex].pinData[pinDataIndex].CID = _cid;
-        NFTsArray[NFTIndex].pinData[pinDataIndex].date = today;
+        _NFTsArray[NFTIndex].pinData[pinDataIndex].subject = _subject;
+        _NFTsArray[NFTIndex].pinData[pinDataIndex].CID = _cid;
+        _NFTsArray[NFTIndex].pinData[pinDataIndex].date = today;
       }
+
+      setProcessingObject((prevState) => ({
+        ...prevState,
+        CIDtoPinDataArrayIndex: _CIDtoPinDataArrayIndex,
+        TrustedAddressToContractAddress: _TrustedAddressToContractAddress,
+        ContractAddressToNFTArrayIndex: _ContractAddressToNFTArrayIndex,
+        CIDtoContractAddress: _CIDtoContractAddress,
+      }));
+
+      setNFTsArray(_NFTsArray);
 
       //IPFS pin item.
       //TO DO: send pin command to IPFS
-      console.log("Pin added", NFTsArray[NFTIndex]);
+      console.log("Pin added", _NFTsArray[NFTIndex]);
       colorLog(1, "Exiting pinItem");
     } else {
       console.log(
@@ -410,7 +541,23 @@ const App = () => {
 
   const unpinItem = async (_cid, _tba) => {
     colorLog(1, "Entering unpinItem", _cid, _tba);
-    if (_cid in CIDtoPinDataArrayIndex) {
+
+    if (!processingObject.hasOwnProperty("CIDtoContractAddress")) {
+      processingObject.CIDtoContractAddress = {};
+    }
+
+    if (!processingObject.hasOwnProperty("CIDtoPinDataArrayIndex")) {
+      processingObject.CIDtoPinDataArrayIndex = {};
+    }
+    let _CIDtoPinDataArrayIndex = processingObject.CIDtoPinDataArrayIndex;
+    let _TrustedAddressToContractAddress =
+      processingObject.TrustedAddressToContractAddress;
+    let _ContractAddressToNFTArrayIndex =
+      processingObject.ContractAddressToNFTArrayIndex;
+    let _CIDtoContractAddress = processingObject.CIDtoContractAddress;
+    let _NFTsArray = NFTsArray;
+
+    if (_cid in _CIDtoPinDataArrayIndex) {
       console.log("Working on unpinning _cid..");
     } else {
       console.log("_cid not pinned (nothing to unpin)..");
@@ -422,22 +569,22 @@ const App = () => {
     //update the object mappings
 
     //get contract address
-    let contractAddress = TrustedAddressToContractAddress[_tba];
+    let contractAddress = _TrustedAddressToContractAddress[_tba];
 
     //check to see if the nft contract is in the list, otherwise return.
-    if (contractAddress in ContractAddressToNFTArrayIndex) {
+    if (contractAddress in _ContractAddressToNFTArrayIndex) {
       console.log(
         "Contract found... Unpinning in progress...",
         contractAddress
       );
 
-      let NFTIndex = [ContractAddressToNFTArrayIndex[contractAddress]];
+      let NFTIndex = [_ContractAddressToNFTArrayIndex[contractAddress]];
       console.log("NFTIndex", NFTIndex);
 
       let pinDataIndex;
-      if (_cid in CIDtoPinDataArrayIndex) {
+      if (_cid in _CIDtoPinDataArrayIndex) {
         console.log("Found _cid element in pinData array.");
-        pinDataIndex = CIDtoPinDataArrayIndex[_cid];
+        pinDataIndex = _CIDtoPinDataArrayIndex[_cid];
         console.log("pinDataIndex", pinDataIndex);
       } else {
         //add a new element to pinData Array for the nft
@@ -446,63 +593,48 @@ const App = () => {
       }
 
       //the index for the last element in the pinData array
-      let pinDataLastIndex = NFTsArray[NFTIndex].pinData.length - 1;
+      let pinDataLastIndex = _NFTsArray[NFTIndex].pinData.length - 1;
 
       if (pinDataIndex == pinDataLastIndex) {
         //if the item we're unpinning is the last element of array
-        delete NFTsArray[NFTIndex].pinData.pop();
+        delete _NFTsArray[NFTIndex].pinData.pop();
       } else {
         //copy the last element of the array to the item that is being unpinned
         //update the CIDtoPinDataArrayIndex
         //delete the last element of the array
-        NFTsArray[NFTIndex].pinData[pinDataIndex] =
-          NFTsArray[NFTIndex].pinData[pinDataLastIndex];
+        _NFTsArray[NFTIndex].pinData[pinDataIndex] =
+          _NFTsArray[NFTIndex].pinData[pinDataLastIndex];
 
-        CIDtoPinDataArrayIndex[
-          [NFTsArray[NFTIndex].pinData[pinDataIndex].CID]
+        _CIDtoPinDataArrayIndex[
+          [_NFTsArray[NFTIndex].pinData[pinDataIndex].CID]
         ] = pinDataIndex;
 
-        delete NFTsArray[NFTIndex].pinData.pop();
+        delete _NFTsArray[NFTIndex].pinData.pop();
       }
 
       //delete cid from mapping objects
-      delete CIDtoContractAddress[_cid];
-      delete CIDtoPinDataArrayIndex[_cid];
+      delete _CIDtoContractAddress[_cid];
+      delete _CIDtoPinDataArrayIndex[_cid];
 
       //ipfs unpin item.
       //TO DO: send unpin command to ipfs
-      console.log("item unpinned", NFTsArray[NFTIndex]);
+      console.log("item unpinned", _NFTsArray[NFTIndex]);
+
+      setProcessingObject((prevState) => ({
+        ...prevState,
+        CIDtoPinDataArrayIndex: _CIDtoPinDataArrayIndex,
+        TrustedAddressToContractAddress: _TrustedAddressToContractAddress,
+        ContractAddressToNFTArrayIndex: _ContractAddressToNFTArrayIndex,
+        CIDtoContractAddress: _CIDtoContractAddress,
+      }));
+
+      setNFTsArray(_NFTsArray);
 
       colorLog(1, "Exiting unpinItem");
     } else {
       console.log("Error - unpin error, no such contract found.");
       console.log("Exiting unpinItem");
       return;
-    }
-  };
-
-  //check to see if wallet is connected
-
-  const checkIfWalletIsConnected = async () => {
-    try {
-      colorLog(1, "Entering checkIfWalletIsConnected");
-      web3Provider = new ethers.providers.Web3Provider(getProvider());
-      const accounts = await web3Provider.provider.request({
-        method: "eth_accounts",
-      });
-
-      if (accounts.length !== 0) {
-        const account = accounts[0];
-        console.log("Found an authorized account:", account);
-        setCurrentAccount(account);
-        colorLog(3, "Calling checkIfXMTPConnected()");
-        checkIfXMTPConnected(account);
-      } else {
-        console.log("No authorized account found");
-      }
-      colorLog(1, "Exiting checkIfWalletIsConnected");
-    } catch (error) {
-      console.log(error);
     }
   };
 
@@ -535,10 +667,6 @@ const App = () => {
   //   return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
   // };
   // poll();
-
-  useEffect(() => {
-    // checkIfWalletIsConnected();
-  }, []);
 
   if (!currentAccount) {
     return (
