@@ -13,6 +13,7 @@ export default async function getNFTOwners(
 
   try {
     const superclusterNFTs = await Web3Api.account.getNFTsForContract(options);
+
     if (superclusterNFTs.result.length > 0) {
       let nft_metadata = superclusterNFTs.result[0].metadata;
 
@@ -36,14 +37,15 @@ export default async function getNFTOwners(
         NFTDescription: description_match[1],
         contractAddr: contractAddress,
         trustedAddr: tba_match[1],
-        pinData: []
-      }
+        pinData: [],
+      };
 
       return nftObject;
     } else {
+      console.log(superclusterNFTs);
       return null;
     }
-  } catch(e) {
+  } catch (e) {
     console.error(e);
   }
 }
