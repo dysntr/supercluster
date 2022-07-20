@@ -57,7 +57,7 @@ const App = () => {
   const [contractAddress, setContractAddress] = useState(
     "0x57E7546d4AdD5758a61C01b84f0858FA0752e940"
   );
-  const [currentXMTP, setCurrentXMTP] = useState([]);
+  const [currentXMTP, setCurrentXMTP] = useState({});
   const [allMessages, setAllMessages] = useState([]);
   const [NFTsArray, setNFTsArray] = useState([]);
   const [processingObject, setProcessingObject] = useState([
@@ -99,7 +99,7 @@ const App = () => {
   const checkIfXMTPConnected = async (account) => {
     try {
       colorLog(1, "Entering checkIfXMTPConnected");
-      if (currentXMTP.length !== 0) {
+      if (Object.keys(currentXMTP).length !== 0) {
         console.log("XMTP setup already!", currentXMTP);
         return;
       } else {
@@ -219,8 +219,8 @@ const App = () => {
     console.log("currentXMTP", currentXMTP);
     console.log("processingObject", processingObject);
     if (
-      currentXMTP.length !== 0 &&
-      Object.keys(processingObject[0].TrustedAddressToContractAddress) !== 0
+      Object.keys(currentXMTP).length !== 0 &&
+      processingObject[0].TrustedAddressToContractAddress.length !== 0
     ) {
       console.log("New processingObject or currentXMTP detected.");
       colorLog(3, "Calling getMessages()");
@@ -243,7 +243,7 @@ const App = () => {
 
   //if currentAccount is updated, getNFTMetaData for new account
   useEffect(() => {
-    if (currentAccount.length != 0) {
+    if (currentAccount.length !== 0) {
       console.log("New Account Detected:", currentAccount);
       colorLog(3, "Calling getNFTMetaData()");
       getNFTMetaData();
@@ -650,24 +650,6 @@ const App = () => {
     }
   };
 
-  const sendMessage = async () => {
-    try {
-      if (currentXMTP) {
-        colorLog(1, "Entering sendMessage");
-        const conversation = await currentXMTP.conversations.newConversation(
-          "0xd69DFe5AE027B4912E384B821afeB946592fb648"
-        );
-        const now = new Date();
-        await conversation.send(now);
-
-        colorLog(2, "Sending message to user", now);
-      }
-      colorLog(1, "Exiting sendMessage");
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   // const poll = () => {
   //   const interval = setInterval(() => {
   //     if (currentXMTP.length !== 0) {
@@ -696,7 +678,7 @@ const App = () => {
             index
             element={<Home userNFTs={NFTsArray} allMessages={allMessages} />}
           />
-          <Route path="/created" element={<Created />} />
+          <Route path="/created" element={<Created currentXMTP={currentXMTP} />} />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />
         </Routes>
