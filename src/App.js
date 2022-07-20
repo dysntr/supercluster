@@ -1,3 +1,4 @@
+import { create, CID } from "ipfs-http-client";
 import "./App.css";
 import React, { useEffect, useState } from "react";
 import { Client } from "@xmtp/xmtp-js";
@@ -57,6 +58,7 @@ const App = () => {
   const [currentXMTP, setCurrentXMTP] = useState({});
   const [allMessages, setAllMessages] = useState([]);
   const [NFTsArray, setNFTsArray] = useState([]);
+
   const [processingObject, setProcessingObject] = useState({
     TrustedAddressToContractAddress: {},
     ContractAddressToNFTArrayIndex: {},
@@ -67,6 +69,9 @@ const App = () => {
 
   let web3Provider;
   let wallet;
+
+  const [enableIPFS, setEnableIPFS] = useState(true);
+  const [ipfsClient, setIPFSClient] = useState({});
 
   /**
    * Implement your connectWallet method here
@@ -84,6 +89,7 @@ const App = () => {
 
       colorLog(3, "Calling checkIfXMTPConnected()");
       checkIfXMTPConnected(accounts[0]);
+      connectedIPFS();
 
       colorLog(1, "Exiting connectWallet");
     } catch (error) {
@@ -127,6 +133,60 @@ const App = () => {
     colorLog(1, "Exiting connectXMTP");
   };
 
+  const connectedIPFS = async () => {
+    //See https://github.com/ipfs/js-ipfs/tree/master/docs/core-api
+    //CORS bypass- need add these or * instead of the individual entries to ipfs config file..
+    // "API": {
+    //   "HTTPHeaders": {
+    //     "Access-Control-Allow-Origin": [
+    //       "http://localhost",
+    //       "http://localhost:3000",
+    //       "http://127.0.0.1"
+    //     ]
+    //   }
+    colorLog(1, "Entering checkIfIPFSConnected");
+    if (!enableIPFS) {
+      colorLog(1, "Exiting checkIfIPFSConnected");
+      return;
+    }
+    //brave - http://localhost:45005/api/v0
+    //const client = create({ url: "http://localhost:45005/api/v0" });
+
+    //normal ipfs - http://localhost:5001/api/v0
+    const client = create({ url: "http://localhost:5001/api/v0" });
+
+    setIPFSClient(client);
+
+    colorLog(1, "Exiting checkIfIPFSConnected");
+  };
+
+  const pinCID = async (_cid) => {
+    colorLog(1, "Entering pinCID()");
+    if (!enableIPFS) {
+      colorLog(1, "Exiting pinCID()");
+
+      return;
+    }
+
+    let cid = await ipfsClient.pin.add(
+      CID.parse("bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e")
+    );
+
+    colorLog(1, "Exiting pinCID()");
+  };
+
+  const unpinCID = async (_cid) => {
+    colorLog(1, "Entering unpinCID()");
+    if (!enableIPFS) {
+      colorLog(1, "Exiting unpinCID()");
+      return;
+    }
+
+    let cid = await ipfsClient.pin.rm(_cid);
+    console.log(cid._baseCache.get("z"));
+
+    colorLog(1, "Exiting unpinCID()");
+  };
   const getNFTMetaData = async () => {
     colorLog(1, "Entering getNFTMetaData");
 
@@ -537,9 +597,9 @@ const App = () => {
 
       setNFTsArray(_NFTsArray);
 
-      //IPFS pin item.
-      //TO DO: send pin command to IPFS
+      pinCID(_cid);
       console.log("Pin added", _NFTsArray[NFTIndex]);
+
       colorLog(1, "Exiting pinItem");
     } else {
       console.log(
@@ -626,8 +686,7 @@ const App = () => {
       delete _CIDtoContractAddress[_cid];
       delete _CIDtoPinDataArrayIndex[_cid];
 
-      //ipfs unpin item.
-      //TO DO: send unpin command to ipfs
+      unpinCID(_cid);
       console.log("item unpinned", _NFTsArray[NFTIndex]);
 
       setProcessingObject((prevState) => ({
