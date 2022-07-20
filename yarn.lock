@@ -4004,6 +4004,18 @@
     node-localstorage "^2.2.1"
     protobufjs "^6.11.3"
 
+"@xmtp/xmtp-js@git+https://github.com/govi218/xmtp-js#password-encrypted-storage":
+  version "0.0.0-development"
+  resolved "git+https://github.com/govi218/xmtp-js#14f242b0c8dc533ecd097b5472ff25e76a94f7a5"
+  dependencies:
+    "@noble/secp256k1" "^1.5.2"
+    "@stardazed/streams-polyfill" "^2.4.0"
+    cross-fetch "^3.1.5"
+    ethers "^5.5.3"
+    js-waku "^0.24.0"
+    node-localstorage "^2.2.1"
+    protobufjs "^6.11.3"
+
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@xtuc/ieee754/-/ieee754-1.2.0.tgz#eef014a3145ae477a1cbc00cd1e552336dceb790"
