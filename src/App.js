@@ -168,9 +168,7 @@ const App = () => {
       return;
     }
 
-    let cid = await ipfsClient.pin.add(
-      CID.parse("bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e")
-    );
+    let cid = await ipfsClient.pin.add(CID.parse(_cid));
 
     colorLog(1, "Exiting pinCID()");
   };
