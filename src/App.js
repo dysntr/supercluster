@@ -7,7 +7,7 @@ import styled from "styled-components";
 import { useMoralisWeb3Api } from "react-moralis";
 
 // Utils
-import getNFTOwners from "./utils/NFT";
+import {getNFTOwners} from "./utils/NFT";
 import { fillNftArrayWithTestData, getTodayDate, colorLog } from "./utils/Misc";
 
 // Navigation Imports
@@ -595,7 +595,7 @@ const App = () => {
       //the index for the last element in the pinData array
       let pinDataLastIndex = _NFTsArray[NFTIndex].pinData.length - 1;
 
-      if (pinDataIndex == pinDataLastIndex) {
+      if (pinDataIndex === pinDataLastIndex) {
         //if the item we're unpinning is the last element of array
         delete _NFTsArray[NFTIndex].pinData.pop();
       } else {
@@ -666,7 +666,7 @@ const App = () => {
             index
             element={<Home userNFTs={NFTsArray} allMessages={allMessages} />}
           />
-          <Route path="/created" element={<Created currentXMTP={currentXMTP} />} />
+          <Route path="/created" element={<Created walletAddress={currentAccount} currentXMTP={currentXMTP} web3Api={Web3Api} />} />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />
         </Routes>

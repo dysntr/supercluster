@@ -1,10 +1,8 @@
-export default async function getNFTOwners(
+export async function getNFTOwners(
   Web3Api,
   currentAccount,
   contractAddress
 ) {
-  //console.log(currentAccount);
-
   const options = {
     chain: "polygon",
     address: currentAccount,
@@ -25,9 +23,7 @@ export default async function getNFTOwners(
 
       let image_regex = /ipfs:\/\/\w+/i;
       let image_match = image_regex.exec(nft_metadata);
-      console.log("Image:", image_match[0]);
 
-      // "TBA\",\"value\":\"0xd69DFe5AE027B4912E384B821afeB946592fb648\"
       let tbaRegex = /TBA\",\"value\":\"(0x\w{40})/i;
       let tba_match = tbaRegex.exec(nft_metadata);
 
@@ -46,5 +42,29 @@ export default async function getNFTOwners(
     }
   } catch (e) {
     console.error(e);
+  }
+}
+
+export async function getCreatedNFTs(Web3Api, walletAddress) {
+  walletAddress = "0xd69DFe5AE027B4912E384B821afeB946592fb648";
+  const options = {
+    address: walletAddress,
+    chain: "polygon",
+  }
+
+  let createdNFTs = [];
+
+  const NFTs = await Web3Api.account.getNFTs(options);
+  console.log(NFTs);
+  if (NFTs.result.length > 0) {
+    NFTs.result.forEach(result => {
+      let nft_metadata = result.metadata;
+      if (nft_metadata && nft_metadata.includes(walletAddress)) {
+        createdNFTs.push(result);
+      }
+    })
+    return createdNFTs;
+  } else {
+    return null
   }
 }
