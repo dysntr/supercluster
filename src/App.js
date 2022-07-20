@@ -50,9 +50,6 @@ const App = () => {
   // Moralis Web3Api Instantiation
   const Web3Api = useMoralisWeb3Api();
 
-  // Wallet Setup
-  const POLLTIME_MS = 30000;
-
   const [currentAccount, setCurrentAccount] = useState("");
   const [contractAddress, setContractAddress] = useState(
     "0x57E7546d4AdD5758a61C01b84f0858FA0752e940"
@@ -60,15 +57,13 @@ const App = () => {
   const [currentXMTP, setCurrentXMTP] = useState({});
   const [allMessages, setAllMessages] = useState([]);
   const [NFTsArray, setNFTsArray] = useState([]);
-  const [processingObject, setProcessingObject] = useState([
-    {
-      TrustedAddressToContractAddress: {},
-      ContractAddressToNFTArrayIndex: {},
-      CIDtoContractAddress: {},
-      CIDtoPinDataArrayIndex: {},
-      isMessageProcessed: {},
-    },
-  ]);
+  const [processingObject, setProcessingObject] = useState({
+    TrustedAddressToContractAddress: {},
+    ContractAddressToNFTArrayIndex: {},
+    CIDtoContractAddress: {},
+    CIDtoPinDataArrayIndex: {},
+    isMessageProcessed: {},
+  });
 
   let web3Provider;
   let wallet;
@@ -156,12 +151,12 @@ const App = () => {
         results.TrustedAddressToContractAddress;
       _ContractAddressToNFTArrayIndex = results.ContractAddressToNFTArrayIndex;
 
-      console.log("****NFTsArray ", _NFTsArray);
-      console.log(
-        "****processingObject ",
-        _TrustedAddressToContractAddress,
-        _ContractAddressToNFTArrayIndex
-      );
+      // console.log("****NFTsArray ", _NFTsArray);
+      // console.log(
+      //   "****processingObject ",
+      //   _TrustedAddressToContractAddress,
+      //   _ContractAddressToNFTArrayIndex
+      // );
 
       setNFTsArray(_NFTsArray);
       setProcessingObject((prevState) => ({
@@ -218,9 +213,10 @@ const App = () => {
     colorLog(1, "Entering checkMessages");
     console.log("currentXMTP", currentXMTP);
     console.log("processingObject", processingObject);
+
     if (
       Object.keys(currentXMTP).length !== 0 &&
-      processingObject[0].TrustedAddressToContractAddress.length !== 0
+      Object.keys(processingObject.TrustedAddressToContractAddress).length !== 0
     ) {
       console.log("New processingObject or currentXMTP detected.");
       colorLog(3, "Calling getMessages()");
@@ -231,7 +227,7 @@ const App = () => {
 
   //if a new NFT is added or XMTP connection established, then get messages.
   useEffect(() => {
-    checkMessages();
+    if (Object.keys(currentXMTP).length !== 0) checkMessages();
   }, [processingObject.TrustedAddressToContractAddress, currentXMTP]);
 
   useEffect(() => {
@@ -239,7 +235,7 @@ const App = () => {
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [processingObject.TrustedAddressToContractAddress, currentXMTP]);
 
   //if currentAccount is updated, getNFTMetaData for new account
   useEffect(() => {
@@ -269,7 +265,9 @@ const App = () => {
 
     const opts = {
       // Only show messages from 7 day(s)
-      startTime: new Date(new Date().setDate(new Date().getDate() - 7)),
+      //startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
+      //5 min
+      startTime: new Date(new Date() - 5 * 60000),
       endTime: new Date(),
     };
 
@@ -279,14 +277,16 @@ const App = () => {
       for await (const message of messagesInConversation) {
         //TODO: sanitize all message.content prior to printing out or processing.
 
-        console.log(
-          `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
-          //if message is from a trusted senderAddress with matching in message content process messages.
-        );
-
         //check to see if message is from trusted broadcast address
-        if (message.senderAddress in _TrustedAddressToContractAddress) {
+        if (
+          message.senderAddress in _TrustedAddressToContractAddress &&
+          message.content.startsWith('{"command"')
+        ) {
           console.log("Message added from tba.", message.senderAddress);
+          console.log(
+            `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
+            //if message is from a trusted senderAddress with matching in message content process messages.
+          );
           allMessages.push(message);
         }
       }
@@ -319,9 +319,9 @@ const App = () => {
     //get message
     //format {command:"","cid":"","subject":""}
 
-    if (!processingObject.hasOwnProperty("isMessageProcessed")) {
-      processingObject.isMessageProcessed = {};
-    }
+    // if (!processingObject.hasOwnProperty("isMessageProcessed")) {
+    //   processingObject.isMessageProcessed = {};
+    // }
 
     let _isMessageProcessed = processingObject.isMessageProcessed;
 
@@ -339,12 +339,12 @@ const App = () => {
         message.id
       );
 
-      //todo: json needs to be set to message.content
-      let json =
-        '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
+      // //todo: json needs to be set to message.content
+      // let json =
+      //   '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
 
       // production - content will be sent in above format
-      // let json = message.content;
+      let json = message.content;
 
       let myRegexp, match, command, cid, subject, secretKey;
       myRegexp = /^\{"command":"(\w+)"/i;
@@ -366,7 +366,7 @@ const App = () => {
       }
 
       //ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e
-      myRegexp = /"cid"\:"(ipfs:\/\/\w+)"/i;
+      myRegexp = /"cid":"([: \w+ \\ /]+)"/i;
       match = myRegexp.exec(json);
       //there was a match
       if (match !== null) {
@@ -406,8 +406,6 @@ const App = () => {
         case "pin":
           colorLog(3, "Calling pinItem()", cid, subject, message.senderAddress);
           pinItem(cid, subject, message.senderAddress);
-          pinItem("testcid2", "testsubject2", message.senderAddress);
-          unpinItem(cid, message.senderAddress);
           break;
 
         case "unpin":
@@ -440,13 +438,13 @@ const App = () => {
     let _ContractAddressToNFTArrayIndex =
       processingObject.ContractAddressToNFTArrayIndex;
 
-    if (!processingObject.hasOwnProperty("CIDtoContractAddress")) {
-      processingObject.CIDtoContractAddress = {};
-    }
+    // if (!processingObject.hasOwnProperty("CIDtoContractAddress")) {
+    //   processingObject.CIDtoContractAddress = {};
+    // }
 
-    if (!processingObject.hasOwnProperty("CIDtoPinDataArrayIndex")) {
-      processingObject.CIDtoPinDataArrayIndex = {};
-    }
+    // if (!processingObject.hasOwnProperty("CIDtoPinDataArrayIndex")) {
+    //   processingObject.CIDtoPinDataArrayIndex = {};
+    // }
 
     let _CIDtoPinDataArrayIndex = processingObject.CIDtoPinDataArrayIndex;
     let _CIDtoContractAddress = processingObject.CIDtoContractAddress;
@@ -607,7 +605,7 @@ const App = () => {
       //the index for the last element in the pinData array
       let pinDataLastIndex = _NFTsArray[NFTIndex].pinData.length - 1;
 
-      if (pinDataIndex == pinDataLastIndex) {
+      if (pinDataIndex === pinDataLastIndex) {
         //if the item we're unpinning is the last element of array
         delete _NFTsArray[NFTIndex].pinData.pop();
       } else {
@@ -650,18 +648,6 @@ const App = () => {
     }
   };
 
-  // const poll = () => {
-  //   const interval = setInterval(() => {
-  //     if (currentXMTP.length !== 0) {
-  //       getMessages(currentXMTP);
-  //     }
-  //     console.log("Poll every ", POLLTIME_MS / 60000, " minute(s).");
-  //   }, POLLTIME_MS);
-
-  //   return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
-  // };
-  // poll();
-
   if (!currentAccount) {
     return (
       <MainContainer>
@@ -678,7 +664,10 @@ const App = () => {
             index
             element={<Home userNFTs={NFTsArray} allMessages={allMessages} />}
           />
-          <Route path="/created" element={<Created currentXMTP={currentXMTP} />} />
+          <Route
+            path="/created"
+            element={<Created currentXMTP={currentXMTP} />}
+          />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />
         </Routes>
