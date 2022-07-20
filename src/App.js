@@ -1,3 +1,4 @@
+import { create, CID } from "ipfs-http-client";
 import "./App.css";
 import React, { useEffect, useState } from "react";
 import { Client } from "@xmtp/xmtp-js";
@@ -46,12 +47,39 @@ const getProvider = () => {
   }
 };
 
+//ar xmtpPatched = require("@xmtp/xmtp-js");
+
+// const patchXMTP = async () => {
+//   try {
+//     colorLog(1, "Entering patchXMTP()");
+//     delete xmtpPatched.Client["create"];
+//     xmtpPatched.Client = function create(wallet, opts) {
+//       opts = { keyStoreType: 1 };
+//       console.log(
+//         "**********************RUNNING WITH PATCHED XMTP**********************"
+//       );
+//       return __awaiter(this, void 0, void 0, function* () {
+//         const options = defaultOptions(opts);
+//         const waku = yield createWaku(options);
+//         const keyStore = createKeyStoreFromConfig(options, wallet, waku);
+//         const keys = yield loadOrCreateKeys(wallet, keyStore);
+//         const client = new Client(waku, keys);
+//         yield client.init(options);
+//         return client;
+//       });
+//     };
+
+//     colorLog(1, "Exiting patchXMTP()");
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+//patchXMTP();
+
 const App = () => {
   // Moralis Web3Api Instantiation
   const Web3Api = useMoralisWeb3Api();
-
-  // Wallet Setup
-  const POLLTIME_MS = 30000;
 
   const [currentAccount, setCurrentAccount] = useState("");
   const [contractAddress, setContractAddress] = useState(
@@ -60,18 +88,20 @@ const App = () => {
   const [currentXMTP, setCurrentXMTP] = useState({});
   const [allMessages, setAllMessages] = useState([]);
   const [NFTsArray, setNFTsArray] = useState([]);
-  const [processingObject, setProcessingObject] = useState([
-    {
-      TrustedAddressToContractAddress: {},
-      ContractAddressToNFTArrayIndex: {},
-      CIDtoContractAddress: {},
-      CIDtoPinDataArrayIndex: {},
-      isMessageProcessed: {},
-    },
-  ]);
+
+  const [processingObject, setProcessingObject] = useState({
+    TrustedAddressToContractAddress: {},
+    ContractAddressToNFTArrayIndex: {},
+    CIDtoContractAddress: {},
+    CIDtoPinDataArrayIndex: {},
+    isMessageProcessed: {},
+  });
 
   let web3Provider;
   let wallet;
+
+  const [enableIPFS, setEnableIPFS] = useState(true);
+  const [ipfsClient, setIPFSClient] = useState({});
 
   /**
    * Implement your connectWallet method here
@@ -89,6 +119,7 @@ const App = () => {
 
       colorLog(3, "Calling checkIfXMTPConnected()");
       checkIfXMTPConnected(accounts[0]);
+      connectedIPFS();
 
       colorLog(1, "Exiting connectWallet");
     } catch (error) {
@@ -127,11 +158,65 @@ const App = () => {
     wallet = web3Provider.getSigner();
     // Create the client with your wallet. This will connect to the XMTP development network by default
     const xmtp = await Client.create(wallet);
+    //const xmtp = await xmtpPatched.Client.create(wallet);
+
     setCurrentXMTP(xmtp);
 
     colorLog(1, "Exiting connectXMTP");
   };
 
+  const connectedIPFS = async () => {
+    //See https://github.com/ipfs/js-ipfs/tree/master/docs/core-api
+    //CORS bypass- need add these or * instead of the individual entries to ipfs config file..
+    // "API": {
+    //   "HTTPHeaders": {
+    //     "Access-Control-Allow-Origin": [
+    //       "http://localhost",
+    //       "http://localhost:3000",
+    //       "http://127.0.0.1"
+    //     ]
+    //   }
+    colorLog(1, "Entering checkIfIPFSConnected");
+    if (!enableIPFS) {
+      colorLog(1, "Exiting checkIfIPFSConnected");
+      return;
+    }
+    //brave - http://localhost:45005/api/v0
+    //const client = create({ url: "http://localhost:45005/api/v0" });
+
+    //normal ipfs - http://localhost:5001/api/v0
+    const client = create({ url: "http://localhost:5001/api/v0" });
+
+    setIPFSClient(client);
+
+    colorLog(1, "Exiting checkIfIPFSConnected");
+  };
+
+  const pinCID = async (_cid) => {
+    colorLog(1, "Entering pinCID()");
+    if (!enableIPFS) {
+      colorLog(1, "Exiting pinCID()");
+
+      return;
+    }
+
+    let cid = await ipfsClient.pin.add(CID.parse(_cid));
+
+    colorLog(1, "Exiting pinCID()");
+  };
+
+  const unpinCID = async (_cid) => {
+    colorLog(1, "Entering unpinCID()");
+    if (!enableIPFS) {
+      colorLog(1, "Exiting unpinCID()");
+      return;
+    }
+
+    let cid = await ipfsClient.pin.rm(_cid);
+    console.log(cid._baseCache.get("z"));
+
+    colorLog(1, "Exiting unpinCID()");
+  };
   const getNFTMetaData = async () => {
     colorLog(1, "Entering getNFTMetaData");
 
@@ -156,12 +241,12 @@ const App = () => {
         results.TrustedAddressToContractAddress;
       _ContractAddressToNFTArrayIndex = results.ContractAddressToNFTArrayIndex;
 
-      console.log("****NFTsArray ", _NFTsArray);
-      console.log(
-        "****processingObject ",
-        _TrustedAddressToContractAddress,
-        _ContractAddressToNFTArrayIndex
-      );
+      // console.log("****NFTsArray ", _NFTsArray);
+      // console.log(
+      //   "****processingObject ",
+      //   _TrustedAddressToContractAddress,
+      //   _ContractAddressToNFTArrayIndex
+      // );
 
       setNFTsArray(_NFTsArray);
       setProcessingObject((prevState) => ({
@@ -214,16 +299,32 @@ const App = () => {
     colorLog(1, "Exiting processNFTMetadata");
   };
 
-  //if a new NFT is added or XMTP connection established, then get messages.
-  useEffect(() => {
+  const checkMessages = async () => {
+    colorLog(1, "Entering checkMessages");
+    console.log("currentXMTP", currentXMTP);
+    console.log("processingObject", processingObject);
+
     if (
       Object.keys(currentXMTP).length !== 0 &&
-      processingObject.TrustedAddressToContractAddress.length != 0
+      Object.keys(processingObject.TrustedAddressToContractAddress).length !== 0
     ) {
       console.log("New processingObject or currentXMTP detected.");
       colorLog(3, "Calling getMessages()");
       getMessages();
     }
+    colorLog(1, "Exiting checkMessages");
+  };
+
+  //if a new NFT is added or XMTP connection established, then get messages.
+  useEffect(() => {
+    if (Object.keys(currentXMTP).length !== 0) checkMessages();
+  }, [processingObject.TrustedAddressToContractAddress, currentXMTP]);
+
+  useEffect(() => {
+    const interval = setInterval(() => checkMessages(), 30000);
+    return () => {
+      clearInterval(interval);
+    };
   }, [processingObject.TrustedAddressToContractAddress, currentXMTP]);
 
   //if currentAccount is updated, getNFTMetaData for new account
@@ -254,7 +355,9 @@ const App = () => {
 
     const opts = {
       // Only show messages from 7 day(s)
-      startTime: new Date(new Date().setDate(new Date().getDate() - 7)),
+      //startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
+      //5 min
+      startTime: new Date(new Date() - 5 * 60000),
       endTime: new Date(),
     };
 
@@ -264,14 +367,21 @@ const App = () => {
       for await (const message of messagesInConversation) {
         //TODO: sanitize all message.content prior to printing out or processing.
 
+        //check to see if message is from trusted broadcast address
+        if (message.content !== "undefined") continue;
         console.log(
           `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
           //if message is from a trusted senderAddress with matching in message content process messages.
         );
-
-        //check to see if message is from trusted broadcast address
-        if (message.senderAddress in _TrustedAddressToContractAddress) {
+        if (
+          message.senderAddress in _TrustedAddressToContractAddress &&
+          message.content.startsWith('{"command"')
+        ) {
           console.log("Message added from tba.", message.senderAddress);
+          console.log(
+            `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
+            //if message is from a trusted senderAddress with matching in message content process messages.
+          );
           allMessages.push(message);
         }
       }
@@ -304,9 +414,9 @@ const App = () => {
     //get message
     //format {command:"","cid":"","subject":""}
 
-    if (!processingObject.hasOwnProperty("isMessageProcessed")) {
-      processingObject.isMessageProcessed = {};
-    }
+    // if (!processingObject.hasOwnProperty("isMessageProcessed")) {
+    //   processingObject.isMessageProcessed = {};
+    // }
 
     let _isMessageProcessed = processingObject.isMessageProcessed;
 
@@ -314,11 +424,8 @@ const App = () => {
     colorLog(1, "Entering processMessages");
 
     for (const message of _allMessages) {
-      if (
-        typeof _isMessageProcessed !== "undefined" &&
-        message.id in _isMessageProcessed
-      ) {
-        return;
+      if (message.id in _isMessageProcessed) {
+        continue;
       }
 
       colorLog(
@@ -327,12 +434,12 @@ const App = () => {
         message.id
       );
 
-      //todo: json needs to be set to message.content
-      let json =
-        '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
+      // //todo: json needs to be set to message.content
+      // let json =
+      //   '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
 
       // production - content will be sent in above format
-      // let json = message.content;
+      let json = message.content;
 
       let myRegexp, match, command, cid, subject, secretKey;
       myRegexp = /^\{"command":"(\w+)"/i;
@@ -354,7 +461,7 @@ const App = () => {
       }
 
       //ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e
-      myRegexp = /"cid"\:"(ipfs:\/\/\w+)"/i;
+      myRegexp = /"cid":"([: \w+ \\ /]+)"/i;
       match = myRegexp.exec(json);
       //there was a match
       if (match !== null) {
@@ -394,8 +501,6 @@ const App = () => {
         case "pin":
           colorLog(3, "Calling pinItem()", cid, subject, message.senderAddress);
           pinItem(cid, subject, message.senderAddress);
-          pinItem("testcid2", "testsubject2", message.senderAddress);
-          unpinItem(cid, message.senderAddress);
           break;
 
         case "unpin":
@@ -428,13 +533,13 @@ const App = () => {
     let _ContractAddressToNFTArrayIndex =
       processingObject.ContractAddressToNFTArrayIndex;
 
-    if (!processingObject.hasOwnProperty("CIDtoContractAddress")) {
-      processingObject.CIDtoContractAddress = {};
-    }
+    // if (!processingObject.hasOwnProperty("CIDtoContractAddress")) {
+    //   processingObject.CIDtoContractAddress = {};
+    // }
 
-    if (!processingObject.hasOwnProperty("CIDtoPinDataArrayIndex")) {
-      processingObject.CIDtoPinDataArrayIndex = {};
-    }
+    // if (!processingObject.hasOwnProperty("CIDtoPinDataArrayIndex")) {
+    //   processingObject.CIDtoPinDataArrayIndex = {};
+    // }
 
     let _CIDtoPinDataArrayIndex = processingObject.CIDtoPinDataArrayIndex;
     let _CIDtoContractAddress = processingObject.CIDtoContractAddress;
@@ -527,9 +632,9 @@ const App = () => {
 
       setNFTsArray(_NFTsArray);
 
-      //IPFS pin item.
-      //TO DO: send pin command to IPFS
+      pinCID(_cid);
       console.log("Pin added", _NFTsArray[NFTIndex]);
+
       colorLog(1, "Exiting pinItem");
     } else {
       console.log(
@@ -616,8 +721,7 @@ const App = () => {
       delete _CIDtoContractAddress[_cid];
       delete _CIDtoPinDataArrayIndex[_cid];
 
-      //ipfs unpin item.
-      //TO DO: send unpin command to ipfs
+      unpinCID(_cid);
       console.log("item unpinned", _NFTsArray[NFTIndex]);
 
       setProcessingObject((prevState) => ({
@@ -637,18 +741,6 @@ const App = () => {
       return;
     }
   };
-
-  // const poll = () => {
-  //   const interval = setInterval(() => {
-  //     if (currentXMTP.length !== 0) {
-  //       getMessages(currentXMTP);
-  //     }
-  //     console.log("Poll every ", POLLTIME_MS / 60000, " minute(s).");
-  //   }, POLLTIME_MS);
-
-  //   return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
-  // };
-  // poll();
 
   if (!currentAccount) {
     return (
