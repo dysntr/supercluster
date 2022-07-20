@@ -1,7 +1,6 @@
 import { create, CID } from "ipfs-http-client";
 import "./App.css";
 import React, { useEffect, useState } from "react";
-import { Client } from "@xmtp/xmtp-js";
 import { ethers } from "ethers";
 import createMetaMaskProvider from "metamask-extension-provider";
 import styled from "styled-components";
@@ -9,6 +8,7 @@ import { useMoralisWeb3Api } from "react-moralis";
 
 // Utils
 import {getNFTOwners} from "./utils/NFT";
+import XMTPManager from "./utils/Xmtp.js"
 import { fillNftArrayWithTestData, getTodayDate, colorLog } from "./utils/Misc";
 
 // Navigation Imports
@@ -85,7 +85,6 @@ const App = () => {
   const [contractAddress, setContractAddress] = useState(
     "0x57E7546d4AdD5758a61C01b84f0858FA0752e940"
   );
-  const [currentXMTP, setCurrentXMTP] = useState({});
   const [allMessages, setAllMessages] = useState([]);
   const [NFTsArray, setNFTsArray] = useState([]);
 
@@ -118,35 +117,11 @@ const App = () => {
       setCurrentAccount(accounts[0]);
 
       colorLog(3, "Calling checkIfXMTPConnected()");
-      checkIfXMTPConnected(accounts[0]);
+      if (!XMTPManager.connected())
+        connectXMTP();
       connectedIPFS();
 
       colorLog(1, "Exiting connectWallet");
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const checkIfXMTPConnected = async (account) => {
-    try {
-      colorLog(1, "Entering checkIfXMTPConnected");
-      if (Object.keys(currentXMTP).length !== 0) {
-        console.log("XMTP setup already!", currentXMTP);
-        return;
-      } else {
-        if (account) {
-          console.log(
-            "checkIfXMTPConnected() - Calling connectXMTP() (account): ",
-            account
-          );
-          colorLog(3, "Calling connectXMTP()");
-          connectXMTP();
-        } else {
-          console.log("Ethereum wallet needs to be configured");
-          return;
-        }
-      }
-      colorLog(1, "Exiting checkIfXMTPConnected");
     } catch (error) {
       console.log(error);
     }
@@ -157,10 +132,8 @@ const App = () => {
     web3Provider = new ethers.providers.Web3Provider(getProvider());
     wallet = web3Provider.getSigner();
     // Create the client with your wallet. This will connect to the XMTP development network by default
-    const xmtp = await Client.create(wallet);
-    //const xmtp = await xmtpPatched.Client.create(wallet);
-
-    setCurrentXMTP(xmtp);
+    await XMTPManager.getInstance(wallet);
+    // setCurrentXMTP(xmtp);
 
     colorLog(1, "Exiting connectXMTP");
   };
@@ -301,14 +274,13 @@ const App = () => {
 
   const checkMessages = async () => {
     colorLog(1, "Entering checkMessages");
-    console.log("currentXMTP", currentXMTP);
     console.log("processingObject", processingObject);
 
     if (
-      Object.keys(currentXMTP).length !== 0 &&
+      XMTPManager.connected() &&
       Object.keys(processingObject.TrustedAddressToContractAddress).length !== 0
     ) {
-      console.log("New processingObject or currentXMTP detected.");
+      console.log("New processingObject or XMTPManager detected.");
       colorLog(3, "Calling getMessages()");
       getMessages();
     }
@@ -317,15 +289,16 @@ const App = () => {
 
   //if a new NFT is added or XMTP connection established, then get messages.
   useEffect(() => {
-    if (Object.keys(currentXMTP).length !== 0) checkMessages();
-  }, [processingObject.TrustedAddressToContractAddress, currentXMTP]);
+    console.log(XMTPManager.connected());
+    if (XMTPManager.connected()) checkMessages();
+  }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
 
   useEffect(() => {
     const interval = setInterval(() => checkMessages(), 30000);
     return () => {
       clearInterval(interval);
     };
-  }, [processingObject.TrustedAddressToContractAddress, currentXMTP]);
+  }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
 
   //if currentAccount is updated, getNFTMetaData for new account
   useEffect(() => {
@@ -338,10 +311,11 @@ const App = () => {
 
   const getMessages = async () => {
     colorLog(1, "Entering getMessages");
+    const conversations = await XMTPManager.getConversations();
 
     console.log(
       " xmtp.conversations.list()",
-      await currentXMTP.conversations.list()
+      conversations
     );
     let allMessages = [];
 
@@ -361,7 +335,7 @@ const App = () => {
       endTime: new Date(),
     };
 
-    for (const conversation of await currentXMTP.conversations.list()) {
+    for (const conversation of conversations) {
       const messagesInConversation = await conversation.messages(opts);
 
       for await (const message of messagesInConversation) {
@@ -758,7 +732,7 @@ const App = () => {
             index
             element={<Home userNFTs={NFTsArray} allMessages={allMessages} />}
           />
-          <Route path="/created" element={<Created walletAddress={currentAccount} currentXMTP={currentXMTP} web3Api={Web3Api} />} />
+          <Route path="/created" element={<Created walletAddress={currentAccount} web3Api={Web3Api} />} />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />
         </Routes>

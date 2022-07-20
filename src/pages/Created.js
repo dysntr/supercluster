@@ -1,7 +1,11 @@
 import React, {useEffect, useState} from "react";
 import styled from "styled-components";
+
+// Utils
+import XMTPManager from "../utils/Xmtp.js"
 import { getTodayDate, colorLog } from "../utils/Misc";
 import { getCreatedNFTs } from "../utils/NFT";
+
 
 const CreatedDiv = styled.div`
   color: white;
@@ -19,7 +23,6 @@ export default function Created(props) {
   const [encryptionKey, setEncryptionKey] = useState("secret");
   const [command, setCommand] = useState("");
 
-  let currentXMTP = props.currentXMTP;
   let walletAddress = props.walletAddress;
   let web3Api = props.web3Api;
 
@@ -34,27 +37,6 @@ export default function Created(props) {
     setCommand("");
   };
 
-  const sendMessage = async (message) => {
-    try {
-      if (Object.keys(currentXMTP).length !== 0) {
-        console.log(currentXMTP);
-        colorLog(1, "Entering sendMessage");
-        // const conversation = await currentXMTP.conversations.newConversation(recipient);
-        const conversation = await currentXMTP.conversations.newConversation(
-          "0xebFE9190D00d61cA7dBCf00A0Cfdc6AE8E1B5264"
-        );
-        await conversation.send(JSON.stringify(message));
-
-        colorLog(2, "Sending message to user", JSON.stringify(message));
-      } else {
-        console.error("Current XMTP is not available in Created component");
-      }
-      colorLog(1, "Exiting sendMessage");
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const submitMessage = async () => {
     let messageObject = {
       command: command,
@@ -65,7 +47,8 @@ export default function Created(props) {
     };
 
     try {
-      await sendMessage(messageObject);
+      colorLog(2, "Sending message to user", JSON.stringify(messageObject));
+      await XMTPManager.sendMessage("0xE4475EF8717d14Bef6dCBAd55E41dE64a0cc8510", JSON.stringify(messageObject));
     } catch (e) {
       console.error("Error sending message:", e);
     }
