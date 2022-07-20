@@ -8,7 +8,7 @@ import styled from "styled-components";
 import { useMoralisWeb3Api } from "react-moralis";
 
 // Utils
-import getNFTOwners from "./utils/NFT";
+import {getNFTOwners} from "./utils/NFT";
 import { fillNftArrayWithTestData, getTodayDate, colorLog } from "./utils/Misc";
 
 // Navigation Imports
@@ -758,10 +758,7 @@ const App = () => {
             index
             element={<Home userNFTs={NFTsArray} allMessages={allMessages} />}
           />
-          <Route
-            path="/created"
-            element={<Created currentXMTP={currentXMTP} />}
-          />
+          <Route path="/created" element={<Created walletAddress={currentAccount} currentXMTP={currentXMTP} web3Api={Web3Api} />} />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />
         </Routes>

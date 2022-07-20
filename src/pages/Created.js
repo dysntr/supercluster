@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import styled from "styled-components";
 import { getTodayDate, colorLog } from "../utils/Misc";
+import { getCreatedNFTs } from "../utils/NFT";
 
 const CreatedDiv = styled.div`
   color: white;
@@ -11,6 +12,7 @@ const CreatedDiv = styled.div`
 `;
 
 export default function Created(props) {
+  const [nfts, setNfts] = useState([]); 
   const [recipient, setRecipient] = useState("");
   const [cid, setCid] = useState("");
   const [subject, setSubject] = useState("");
@@ -18,6 +20,12 @@ export default function Created(props) {
   const [command, setCommand] = useState("");
 
   let currentXMTP = props.currentXMTP;
+  let walletAddress = props.walletAddress;
+  let web3Api = props.web3Api;
+
+  useEffect(() => {
+    setNfts(getCreatedNFTs(web3Api, walletAddress));
+  }, [web3Api, walletAddress])
 
   const resetState = () => {
     setCid("");
