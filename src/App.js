@@ -214,17 +214,32 @@ const App = () => {
     colorLog(1, "Exiting processNFTMetadata");
   };
 
-  //if a new NFT is added or XMTP connection established, then get messages.
-  useEffect(() => {
+  const checkMessages = async () => {
+    colorLog(1, "Entering checkMessages");
+    console.log("currentXMTP", currentXMTP);
+    console.log("processingObject", processingObject);
     if (
-      currentXMTP.length != 0 &&
-      processingObject.TrustedAddressToContractAddress.length != 0
+      currentXMTP.length !== 0 &&
+      Object.keys(processingObject[0].TrustedAddressToContractAddress) !== 0
     ) {
       console.log("New processingObject or currentXMTP detected.");
       colorLog(3, "Calling getMessages()");
       getMessages();
     }
+    colorLog(1, "Exiting checkMessages");
+  };
+
+  //if a new NFT is added or XMTP connection established, then get messages.
+  useEffect(() => {
+    checkMessages();
   }, [processingObject.TrustedAddressToContractAddress, currentXMTP]);
+
+  useEffect(() => {
+    const interval = setInterval(() => checkMessages(), 30000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   //if currentAccount is updated, getNFTMetaData for new account
   useEffect(() => {
@@ -314,11 +329,8 @@ const App = () => {
     colorLog(1, "Entering processMessages");
 
     for (const message of _allMessages) {
-      if (
-        typeof _isMessageProcessed !== "undefined" &&
-        message.id in _isMessageProcessed
-      ) {
-        return;
+      if (message.id in _isMessageProcessed) {
+        continue;
       }
 
       colorLog(
