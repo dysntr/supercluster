@@ -33,7 +33,7 @@ export default function Created(props) {
         colorLog(1, "Entering sendMessage");
         // const conversation = await currentXMTP.conversations.newConversation(recipient);
         const conversation = await currentXMTP.conversations.newConversation(
-          "0xd69DFe5AE027B4912E384B821afeB946592fb648"
+          "0xebFE9190D00d61cA7dBCf00A0Cfdc6AE8E1B5264"
         );
         await conversation.send(JSON.stringify(message));
 

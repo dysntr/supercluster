@@ -8,7 +8,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@walletconnect/web3-provider": "^1.7.8",
     "@web3auth/web3auth": "^1.1.1",
-    "@xmtp/xmtp-js": "^4.4.0",
+    "@xmtp/xmtp-js": "^5.0.0",
     "assert": "^2.0.0",
     "browserify-fs": "^1.0.0",
     "buffer": "^6.0.3",

@@ -47,6 +47,36 @@ const getProvider = () => {
   }
 };
 
+//ar xmtpPatched = require("@xmtp/xmtp-js");
+
+// const patchXMTP = async () => {
+//   try {
+//     colorLog(1, "Entering patchXMTP()");
+//     delete xmtpPatched.Client["create"];
+//     xmtpPatched.Client = function create(wallet, opts) {
+//       opts = { keyStoreType: 1 };
+//       console.log(
+//         "**********************RUNNING WITH PATCHED XMTP**********************"
+//       );
+//       return __awaiter(this, void 0, void 0, function* () {
+//         const options = defaultOptions(opts);
+//         const waku = yield createWaku(options);
+//         const keyStore = createKeyStoreFromConfig(options, wallet, waku);
+//         const keys = yield loadOrCreateKeys(wallet, keyStore);
+//         const client = new Client(waku, keys);
+//         yield client.init(options);
+//         return client;
+//       });
+//     };
+
+//     colorLog(1, "Exiting patchXMTP()");
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+//patchXMTP();
+
 const App = () => {
   // Moralis Web3Api Instantiation
   const Web3Api = useMoralisWeb3Api();
@@ -128,6 +158,8 @@ const App = () => {
     wallet = web3Provider.getSigner();
     // Create the client with your wallet. This will connect to the XMTP development network by default
     const xmtp = await Client.create(wallet);
+    //const xmtp = await xmtpPatched.Client.create(wallet);
+
     setCurrentXMTP(xmtp);
 
     colorLog(1, "Exiting connectXMTP");
@@ -336,6 +368,11 @@ const App = () => {
         //TODO: sanitize all message.content prior to printing out or processing.
 
         //check to see if message is from trusted broadcast address
+        if (message.content !== "undefined") continue;
+        console.log(
+          `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
+          //if message is from a trusted senderAddress with matching in message content process messages.
+        );
         if (
           message.senderAddress in _TrustedAddressToContractAddress &&
           message.content.startsWith('{"command"')

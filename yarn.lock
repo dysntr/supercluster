@@ -3991,10 +3991,10 @@
     "@webassemblyjs/ast" "1.11.1"
     "@xtuc/long" "4.2.2"
 
-"@xmtp/xmtp-js@^4.4.0":
-  version "4.4.1"
-  resolved "https://registry.yarnpkg.com/@xmtp/xmtp-js/-/xmtp-js-4.4.1.tgz#d3975a9d6cb6cafee08a5787a2026c965de3ea41"
-  integrity sha512-8/cMwyiP6bT5TbWF+xOU2LJCqRSxR7UsqSR0mzLNuIcx7sV3o81DQjvS+1dRGWPM3kl1LG4h2+6EUiPuodnN1A==
+"@xmtp/xmtp-js@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@xmtp/xmtp-js/-/xmtp-js-5.0.0.tgz#9959dbc101084de405132e6ff8d4f9818f0a6e55"
+  integrity sha512-BCglVkhErW91zRhVf1sFGsfwaNlCMa3FdUl2AnA/B75+a4vqffgWukv/W6w67ZDcSx9rtkdO6xbkoWXKT5BRhg==
   dependencies:
     "@noble/secp256k1" "^1.5.2"
     "@stardazed/streams-polyfill" "^2.4.0"
