@@ -21,6 +21,7 @@ import Navigation from "./components/Navigation";
 import AllData from "./pages/AllData";
 import ConnectWallet from "./pages/ConnectWallet";
 import NFTDetail from "./components/followedNFTs/NFTDetail";
+import DetailSection from "./components/NFTs/DetailSection";
 import { tab } from "@testing-library/user-event/dist/tab";
 
 // Styled Components
@@ -46,6 +47,36 @@ const getProvider = () => {
     return provider;
   }
 };
+
+//ar xmtpPatched = require("@xmtp/xmtp-js");
+
+// const patchXMTP = async () => {
+//   try {
+//     colorLog(1, "Entering patchXMTP()");
+//     delete xmtpPatched.Client["create"];
+//     xmtpPatched.Client = function create(wallet, opts) {
+//       opts = { keyStoreType: 1 };
+//       console.log(
+//         "**********************RUNNING WITH PATCHED XMTP**********************"
+//       );
+//       return __awaiter(this, void 0, void 0, function* () {
+//         const options = defaultOptions(opts);
+//         const waku = yield createWaku(options);
+//         const keyStore = createKeyStoreFromConfig(options, wallet, waku);
+//         const keys = yield loadOrCreateKeys(wallet, keyStore);
+//         const client = new Client(waku, keys);
+//         yield client.init(options);
+//         return client;
+//       });
+//     };
+
+//     colorLog(1, "Exiting patchXMTP()");
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+//patchXMTP();
 
 const App = () => {
   // Moralis Web3Api Instantiation
@@ -159,7 +190,6 @@ const App = () => {
 
     colorLog(1, "Exiting unpinCID()");
   };
-
   const getNFTMetaData = async () => {
     colorLog(1, "Entering getNFTMetaData");
 
@@ -183,6 +213,13 @@ const App = () => {
       _TrustedAddressToContractAddress =
         results.TrustedAddressToContractAddress;
       _ContractAddressToNFTArrayIndex = results.ContractAddressToNFTArrayIndex;
+
+      // console.log("****NFTsArray ", _NFTsArray);
+      // console.log(
+      //   "****processingObject ",
+      //   _TrustedAddressToContractAddress,
+      //   _ContractAddressToNFTArrayIndex
+      // );
 
       setNFTsArray(_NFTsArray);
       setProcessingObject((prevState) => ({
@@ -253,20 +290,14 @@ const App = () => {
   //if a new NFT is added or XMTP connection established, then get messages.
   useEffect(() => {
     if (XMTPManager.connected()) checkMessages();
-  }, [
-    processingObject.TrustedAddressToContractAddress,
-    XMTPManager.clientInstance,
-  ]);
+  }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
 
   useEffect(() => {
     const interval = setInterval(() => checkMessages(), 30000);
     return () => {
       clearInterval(interval);
     };
-  }, [
-    processingObject.TrustedAddressToContractAddress,
-    XMTPManager.clientInstance,
-  ]);
+  }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
 
   //if currentAccount is updated, getNFTMetaData for new account
   useEffect(() => {
@@ -293,8 +324,9 @@ const App = () => {
     );
 
     const opts = {
-      // Only show messages from
-      //5 min ago
+      // Only show messages from 7 day(s)
+      //startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
+      //5 min
       startTime: new Date(new Date() - 5 * 60000),
       endTime: new Date(),
     };
@@ -306,13 +338,11 @@ const App = () => {
         //TODO: sanitize all message.content prior to printing out or processing.
 
         //check to see if message is from trusted broadcast address
-        if (message.content === undefined) continue;
-
+        if (message.content !== "undefined") continue;
         console.log(
           `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
           //if message is from a trusted senderAddress with matching in message content process messages.
         );
-
         if (
           message.senderAddress in _TrustedAddressToContractAddress &&
           message.content.startsWith('{"command"')
@@ -349,12 +379,19 @@ const App = () => {
 
   const processMessages = async (_allMessages) => {
     //TODO: sanitize all message.content prior to printing out or processing.
+    //get command
+    //get cid
+    //get message
+    //format {command:"","cid":"","subject":""}
 
-    colorLog(1, "Entering processMessages");
+    // if (!processingObject.hasOwnProperty("isMessageProcessed")) {
+    //   processingObject.isMessageProcessed = {};
+    // }
 
     let _isMessageProcessed = processingObject.isMessageProcessed;
 
     console.log(_isMessageProcessed);
+    colorLog(1, "Entering processMessages");
 
     for (const message of _allMessages) {
       if (message.id in _isMessageProcessed) {
@@ -367,17 +404,17 @@ const App = () => {
         message.id
       );
 
-      // test string:
+      // //todo: json needs to be set to message.content
       // let json =
       //   '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
 
+      // production - content will be sent in above format
       let json = message.content;
 
       let myRegexp, match, command, cid, subject, secretKey;
       myRegexp = /^\{"command":"(\w+)"/i;
       match = myRegexp.exec(json);
-
-      //get command from message.content
+      //there was a match
       if (match !== null) {
         command = match[1];
         console.log("match(command):", command);
@@ -465,6 +502,14 @@ const App = () => {
       processingObject.TrustedAddressToContractAddress;
     let _ContractAddressToNFTArrayIndex =
       processingObject.ContractAddressToNFTArrayIndex;
+
+    // if (!processingObject.hasOwnProperty("CIDtoContractAddress")) {
+    //   processingObject.CIDtoContractAddress = {};
+    // }
+
+    // if (!processingObject.hasOwnProperty("CIDtoPinDataArrayIndex")) {
+    //   processingObject.CIDtoPinDataArrayIndex = {};
+    // }
 
     let _CIDtoPinDataArrayIndex = processingObject.CIDtoPinDataArrayIndex;
     let _CIDtoContractAddress = processingObject.CIDtoContractAddress;
@@ -596,6 +641,8 @@ const App = () => {
       return;
     }
 
+    //update the object mappings
+
     //get contract address
     let contractAddress = _TrustedAddressToContractAddress[_tba];
 
@@ -684,11 +731,19 @@ const App = () => {
           <Route
             path="/created"
             element={
-              <Created walletAddress={currentAccount} web3Api={Web3Api} />
+              <Created
+                walletAddress={currentAccount}
+                web3Api={Web3Api}
+                isCreator={true}
+              />
             }
           />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />
+          <Route
+            path="/nft/manage/:nftAddr"
+            element={<DetailSection isCreator={true} />}
+          />
         </Routes>
       </MainContainer>
     );
