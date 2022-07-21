@@ -40,65 +40,33 @@ const ContentInfo = styled.div`
 export const AllNFTData = ({ walletAddress, web3Api, NFTsArray }) => {
   const [nfts, setNfts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  // {
-  //   NFTTitle: "JWT Galaxy",
-  //   NFTImg: "/fakeNFT/galaxies.jpg",
-  //   contractAddr: "0x0d145472c4Cc8D3d5c7b02A811f4FD83d26382A0",
-  //   trustedAddr: "0x0d145472c4Cc8D3d5c7b02A811f4FD83d26382A0",
-  //   pinData: [
-  //     {
-  //       subject: "JWT galaxies pic",
-  //       CID: "QmedKF9UM2XDEepFZjM2rFZ4hKadTHzbRkeP4Sza2AYNrU",
-  //       date: "07/17/22",
-  //     },
-  //     {
-  //       subject: "JWT blackhole",
-  //       CID: "QmQiu4DowMCdM6H9VDZnPMm6kCCZutqUJUvCAmXzLsqHTH",
-  //       date: "07/17/22",
-  //     },
-  //   ],
-  // },
 
-  //for (NFT in NFTsArray) {
-  /// All Data
-  /// NFTTitle, NFTImg,Subject, CID, Date
+  useEffect(() => {
+    const processNFTArray = (NFTsArray) => {
+      const newNFTArray = [];
+      const tempArray = NFTsArray.map((NFT) => {
+        const newNFT = {};
+        newNFT["name"] = NFT.NFTTitle;
+        newNFT["image"] = NFT.NFTImg;
+        newNFT["pinData"] = NFT.pinData;
+        newNFTArray.push(newNFT);
+        setNfts(newNFTArray);
+      });
+    };
 
-  ///
-  ///
-  console.log("NFTsArray-ALLNFTData", NFTsArray);
-  console.log("nfts-ALLNFTData", nfts);
+    processNFTArray(NFTsArray);
+  }, []);
 
-  // const ALLNFTs = nfts.map((nft) => {
-  //   console.log(nft);
-  //   return (
-  //     <NFTContainer>
-  //       <NFTGeneral nft={nft} />
-  //       <ContentInfo>
-  //         <ContentDetails contentArray={nft.pinData} />
-  //       </ContentInfo>
-  //     </NFTContainer>
-  //   );
-  // });
-
-  // // temp, need to pull pin data from the state
-  // console.log("nft.contractAddr", nft.trustedAddr);
-
-  // console.log(
-  //   "ContractAddressToNFTArrayIndex[TrustedAddressToContractAddress[TrustedAddress]]",
-  //   ContractAddressToNFTArrayIndex[
-  //     TrustedAddressToContractAddress[nft.trustedAddr]
-  //   ]
-  // );
-  // console.log("ContractAddressToNFTArrayIndex", ContractAddressToNFTArrayIndex);
-
-  // console.log("NFTsArray", NFTsArray);
-
-  // const pinData =
-  //   NFTsArray[
-  //     ContractAddressToNFTArrayIndex[
-  //       TrustedAddressToContractAddress[nft.trustedAddr]
-  //     ]
-  //   ].pinData;
+  const ALLNFTs = nfts.map((nft) => {
+    return (
+      <NFTContainer>
+        <NFTGeneral nft={nft} />
+        <ContentInfo>
+          <ContentDetails contentArray={nft.pinData} />
+        </ContentInfo>
+      </NFTContainer>
+    );
+  });
 
   useEffect(() => {
     async function getCreatedNFTs(Web3Api, walletAddress) {
@@ -127,7 +95,7 @@ export const AllNFTData = ({ walletAddress, web3Api, NFTsArray }) => {
           }
         });
         setIsLoading(false);
-        setNfts(createdNFTs);
+        // setNfts(createdNFTs);
       } else {
         console.log(colorLog(1, "Error retrieving created NFTs"));
       }
@@ -144,7 +112,7 @@ export const AllNFTData = ({ walletAddress, web3Api, NFTsArray }) => {
       <Menu>
         <BackLink to="/">Home</BackLink>
       </Menu>
-      {/* {ALLNFTs} */}
+      {ALLNFTs}
     </AllDataSection>
   );
 };
