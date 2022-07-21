@@ -338,7 +338,7 @@ const App = () => {
         //TODO: sanitize all message.content prior to printing out or processing.
 
         //check to see if message is from trusted broadcast address
-        if (message.content !== "undefined") continue;
+        if (message.content === undefined) continue;
         console.log(
           `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
         );
