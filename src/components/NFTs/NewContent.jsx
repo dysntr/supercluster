@@ -80,13 +80,14 @@ const NewContent = () => {
   };
 
   const submitMessage = async () => {
-    let messageObject = {
-      command: ipfsCommand,
-      cid: cid,
-      subject: subject,
-      createdDate: getTodayDate(),
-      encryptionKey: encryptionKey,
-    };
+    let messageObject = {};
+    messageObject["command"] = ipfsCommand;
+    messageObject["cid"] = cid;
+    messageObject["subject"] = subject;
+    messageObject["createdDate"] = getTodayDate();
+    messageObject["encryptionKey"] = encryptionKey;
+
+    console.log(colorLog(1, "messg obj", messageObject));
 
     try {
       colorLog(2, "Sending message to user", JSON.stringify(messageObject));
