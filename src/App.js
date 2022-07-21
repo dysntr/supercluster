@@ -7,8 +7,8 @@ import styled from "styled-components";
 import { useMoralisWeb3Api } from "react-moralis";
 
 // Utils
-import {getNFTOwners} from "./utils/NFT";
-import XMTPManager from "./utils/Xmtp.js"
+import { getNFTOwners } from "./utils/NFT";
+import XMTPManager from "./utils/Xmtp.js";
 import { fillNftArrayWithTestData, getTodayDate, colorLog } from "./utils/Misc";
 
 // Navigation Imports
@@ -46,36 +46,6 @@ const getProvider = () => {
     return provider;
   }
 };
-
-//ar xmtpPatched = require("@xmtp/xmtp-js");
-
-// const patchXMTP = async () => {
-//   try {
-//     colorLog(1, "Entering patchXMTP()");
-//     delete xmtpPatched.Client["create"];
-//     xmtpPatched.Client = function create(wallet, opts) {
-//       opts = { keyStoreType: 1 };
-//       console.log(
-//         "**********************RUNNING WITH PATCHED XMTP**********************"
-//       );
-//       return __awaiter(this, void 0, void 0, function* () {
-//         const options = defaultOptions(opts);
-//         const waku = yield createWaku(options);
-//         const keyStore = createKeyStoreFromConfig(options, wallet, waku);
-//         const keys = yield loadOrCreateKeys(wallet, keyStore);
-//         const client = new Client(waku, keys);
-//         yield client.init(options);
-//         return client;
-//       });
-//     };
-
-//     colorLog(1, "Exiting patchXMTP()");
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
-
-//patchXMTP();
 
 const App = () => {
   // Moralis Web3Api Instantiation
@@ -117,8 +87,7 @@ const App = () => {
       setCurrentAccount(accounts[0]);
 
       colorLog(3, "Calling checkIfXMTPConnected()");
-      if (!XMTPManager.connected())
-        connectXMTP();
+      if (!XMTPManager.connected()) connectXMTP();
       connectedIPFS();
 
       colorLog(1, "Exiting connectWallet");
@@ -190,6 +159,7 @@ const App = () => {
 
     colorLog(1, "Exiting unpinCID()");
   };
+
   const getNFTMetaData = async () => {
     colorLog(1, "Entering getNFTMetaData");
 
@@ -213,13 +183,6 @@ const App = () => {
       _TrustedAddressToContractAddress =
         results.TrustedAddressToContractAddress;
       _ContractAddressToNFTArrayIndex = results.ContractAddressToNFTArrayIndex;
-
-      // console.log("****NFTsArray ", _NFTsArray);
-      // console.log(
-      //   "****processingObject ",
-      //   _TrustedAddressToContractAddress,
-      //   _ContractAddressToNFTArrayIndex
-      // );
 
       setNFTsArray(_NFTsArray);
       setProcessingObject((prevState) => ({
@@ -289,16 +252,22 @@ const App = () => {
 
   //if a new NFT is added or XMTP connection established, then get messages.
   useEffect(() => {
-    console.log(XMTPManager.connected());
+    //console.log(XMTPManager.connected());
     if (XMTPManager.connected()) checkMessages();
-  }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
+  }, [
+    processingObject.TrustedAddressToContractAddress,
+    XMTPManager.clientInstance,
+  ]);
 
   useEffect(() => {
     const interval = setInterval(() => checkMessages(), 30000);
     return () => {
       clearInterval(interval);
     };
-  }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
+  }, [
+    processingObject.TrustedAddressToContractAddress,
+    XMTPManager.clientInstance,
+  ]);
 
   //if currentAccount is updated, getNFTMetaData for new account
   useEffect(() => {
@@ -313,10 +282,7 @@ const App = () => {
     colorLog(1, "Entering getMessages");
     const conversations = await XMTPManager.getConversations();
 
-    console.log(
-      " xmtp.conversations.list()",
-      conversations
-    );
+    console.log(" xmtp.conversations.list()", conversations);
     let allMessages = [];
 
     let _TrustedAddressToContractAddress =
@@ -328,9 +294,8 @@ const App = () => {
     );
 
     const opts = {
-      // Only show messages from 7 day(s)
-      //startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
-      //5 min
+      // Only show messages from
+      //5 min ago
       startTime: new Date(new Date() - 5 * 60000),
       endTime: new Date(),
     };
@@ -342,11 +307,13 @@ const App = () => {
         //TODO: sanitize all message.content prior to printing out or processing.
 
         //check to see if message is from trusted broadcast address
-        if (message.content !== "undefined") continue;
+        if (message.content === undefined) continue;
+
         console.log(
           `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
           //if message is from a trusted senderAddress with matching in message content process messages.
         );
+
         if (
           message.senderAddress in _TrustedAddressToContractAddress &&
           message.content.startsWith('{"command"')
@@ -383,19 +350,12 @@ const App = () => {
 
   const processMessages = async (_allMessages) => {
     //TODO: sanitize all message.content prior to printing out or processing.
-    //get command
-    //get cid
-    //get message
-    //format {command:"","cid":"","subject":""}
 
-    // if (!processingObject.hasOwnProperty("isMessageProcessed")) {
-    //   processingObject.isMessageProcessed = {};
-    // }
+    colorLog(1, "Entering processMessages");
 
     let _isMessageProcessed = processingObject.isMessageProcessed;
 
     console.log(_isMessageProcessed);
-    colorLog(1, "Entering processMessages");
 
     for (const message of _allMessages) {
       if (message.id in _isMessageProcessed) {
@@ -408,17 +368,17 @@ const App = () => {
         message.id
       );
 
-      // //todo: json needs to be set to message.content
+      // test string:
       // let json =
       //   '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
 
-      // production - content will be sent in above format
       let json = message.content;
 
       let myRegexp, match, command, cid, subject, secretKey;
       myRegexp = /^\{"command":"(\w+)"/i;
       match = myRegexp.exec(json);
-      //there was a match
+
+      //get command from message.content
       if (match !== null) {
         command = match[1];
         console.log("match(command):", command);
@@ -506,14 +466,6 @@ const App = () => {
       processingObject.TrustedAddressToContractAddress;
     let _ContractAddressToNFTArrayIndex =
       processingObject.ContractAddressToNFTArrayIndex;
-
-    // if (!processingObject.hasOwnProperty("CIDtoContractAddress")) {
-    //   processingObject.CIDtoContractAddress = {};
-    // }
-
-    // if (!processingObject.hasOwnProperty("CIDtoPinDataArrayIndex")) {
-    //   processingObject.CIDtoPinDataArrayIndex = {};
-    // }
 
     let _CIDtoPinDataArrayIndex = processingObject.CIDtoPinDataArrayIndex;
     let _CIDtoContractAddress = processingObject.CIDtoContractAddress;
@@ -645,8 +597,6 @@ const App = () => {
       return;
     }
 
-    //update the object mappings
-
     //get contract address
     let contractAddress = _TrustedAddressToContractAddress[_tba];
 
@@ -732,7 +682,12 @@ const App = () => {
             index
             element={<Home userNFTs={NFTsArray} allMessages={allMessages} />}
           />
-          <Route path="/created" element={<Created walletAddress={currentAccount} web3Api={Web3Api} />} />
+          <Route
+            path="/created"
+            element={
+              <Created walletAddress={currentAccount} web3Api={Web3Api} />
+            }
+          />
           <Route path="/data" element={<AllData />} />
           <Route path="/nft/:nftTitle" element={<NFTDetail />} />
         </Routes>
