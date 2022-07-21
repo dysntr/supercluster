@@ -1,11 +1,10 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 
 // Utils
-import XMTPManager from "../utils/Xmtp.js"
+import XMTPManager from "../utils/Xmtp.js";
 import { getTodayDate, colorLog } from "../utils/Misc";
 import { getCreatedNFTs } from "../utils/NFT";
-
 
 const CreatedDiv = styled.div`
   color: white;
@@ -16,7 +15,7 @@ const CreatedDiv = styled.div`
 `;
 
 export default function Created(props) {
-  const [nfts, setNfts] = useState([]); 
+  const [nfts, setNfts] = useState([]);
   const [recipient, setRecipient] = useState("");
   const [cid, setCid] = useState("");
   const [subject, setSubject] = useState("");
@@ -28,7 +27,7 @@ export default function Created(props) {
 
   useEffect(() => {
     setNfts(getCreatedNFTs(web3Api, walletAddress));
-  }, [web3Api, walletAddress])
+  }, [web3Api, walletAddress]);
 
   const resetState = () => {
     setCid("");
@@ -48,7 +47,10 @@ export default function Created(props) {
 
     try {
       colorLog(2, "Sending message to user", JSON.stringify(messageObject));
-      await XMTPManager.sendMessage("0xE4475EF8717d14Bef6dCBAd55E41dE64a0cc8510", JSON.stringify(messageObject));
+      await XMTPManager.sendMessage(
+        "0xd69DFe5AE027B4912E384B821afeB946592fb648",
+        JSON.stringify(messageObject)
+      );
     } catch (e) {
       console.error("Error sending message:", e);
     }

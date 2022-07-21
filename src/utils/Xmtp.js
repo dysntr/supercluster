@@ -6,10 +6,11 @@ export default class XMTPManager {
   static connected = () => this.clientInstance !== null;
 
   static async sendMessage(recipientAddress, message) {
-    if (this.connected()){
-      const conversation = await this.clientInstance.conversations.newConversation(
-        recipientAddress
-      );
+    if (this.connected()) {
+      const conversation =
+        await this.clientInstance.conversations.newConversation(
+          recipientAddress
+        );
       await conversation.send(message);
       return;
     }
@@ -17,8 +18,8 @@ export default class XMTPManager {
   }
 
   static async getConversations() {
-    if (this.connected()){
-      console.log(this.clientInstance)
+    if (this.connected()) {
+      console.log(this.clientInstance);
       return await this.clientInstance.conversations.list();
     }
     throw new Error("XMTP not connected!");
