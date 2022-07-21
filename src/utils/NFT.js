@@ -1,4 +1,4 @@
-export async function getNFTOwners(Web3Api, currentAccount, contractAddress) {
+export async function getNFTs(Web3Api, currentAccount, contractAddress) {
   const options = {
     chain: "polygon",
     address: currentAccount,
@@ -62,5 +62,23 @@ export async function getCreatedNFTs(Web3Api, walletAddress) {
     return createdNFTs;
   } else {
     return null;
+  }
+}
+
+export async function getNFTOwners(Web3Api, contractAddress) {
+  const options = {
+    address: contractAddress,
+    chain: "polygon"
+  };
+  const nftOwners = await Web3Api.token.getNFTOwners(options);
+
+  let nftOwnersAddresses = [];
+  if (nftOwners && nftOwners.result.length > 0) {
+    nftOwners.result.forEach((nftOwner) => {
+      nftOwnersAddresses.push(nftOwner.owner_of);
+    })
+    return nftOwnersAddresses;
+  } else {
+    return null
   }
 }

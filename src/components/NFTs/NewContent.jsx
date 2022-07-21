@@ -44,7 +44,9 @@ const ContentBttn = styled.button`
   margin-left: 20px;
 `;
 
-const NewContent = () => {
+const NewContent = (props) => {
+  console.log(props.nftOwners);
+
   const [recipient, setRecipient] = useState("");
   const [cid, setCID] = useState("");
   const [subject, setSubject] = useState("");
