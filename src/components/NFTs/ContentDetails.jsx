@@ -21,6 +21,7 @@ const DetailGridTitle = styled.div`
   display: flex;
   padding: 0 1em;
   justify-content: space-between;
+  margin-bottom: 2em;
 `;
 
 const Content = styled.div`
