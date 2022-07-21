@@ -37,7 +37,12 @@ const ContentInfo = styled.div`
   margin: 2em;
 `;
 
-const DetailSection = ({ isCreator }) => {
+const DetailSection = ({
+  isCreator,
+  NFTsArray,
+  ContractAddressToNFTArrayIndex,
+  TrustedAddressToContractAddress,
+}) => {
   const location = useLocation();
   // NFT Object is passed through React Router in the state object
   // see the NFT List component for prop passed nftobj
@@ -45,18 +50,36 @@ const DetailSection = ({ isCreator }) => {
   const { nft } = nftObj;
 
   // temp, need to pull pin data from the state
-  const pinData = [
-    {
-      subject: "JWT galaxies pic",
-      CID: "QmedKF9UM2XDEepFZjM2rFZ4hKadTHzbRkeP4Sza2AYNrU",
-      date: "07/17/22",
-    },
-    {
-      subject: "JWT blackhole",
-      CID: "QmQiu4DowMCdM6H9VDZnPMm6kCCZutqUJUvCAmXzLsqHTH",
-      date: "07/17/22",
-    },
-  ];
+  console.log("nft.contractAddr", nft.trustedAddr);
+
+  console.log(
+    "ContractAddressToNFTArrayIndex[TrustedAddressToContractAddress[TrustedAddress]]",
+    ContractAddressToNFTArrayIndex[
+      TrustedAddressToContractAddress[nft.trustedAddr]
+    ]
+  );
+  console.log("ContractAddressToNFTArrayIndex", ContractAddressToNFTArrayIndex);
+
+  console.log("NFTsArray", NFTsArray);
+
+  const pinData =
+    NFTsArray[
+      ContractAddressToNFTArrayIndex[
+        TrustedAddressToContractAddress[nft.trustedAddr]
+      ]
+    ].pinData;
+  // const pinData = [
+  //   {
+  //     subject: "JWT galaxies pic",
+  //     CID: "QmedKF9UM2XDEepFZjM2rFZ4hKadTHzbRkeP4Sza2AYNrU",
+  //     date: "07/17/22",
+  //   },
+  //   {
+  //     subject: "JWT blackhole",
+  //     CID: "QmQiu4DowMCdM6H9VDZnPMm6kCCZutqUJUvCAmXzLsqHTH",
+  //     date: "07/17/22",
+  //   },
+  // ];
 
   return (
     <NFTSection>

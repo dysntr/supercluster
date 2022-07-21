@@ -21,10 +21,11 @@ export default function Created({ walletAddress, web3Api }) {
       if (NFTs.result.length > 0) {
         NFTs.result.forEach((result) => {
           let nft_metadata = result.metadata;
+
           if (nft_metadata && nft_metadata.includes(walletAddress)) {
             const metaData = JSON.parse(nft_metadata);
-            const contractAddr = metaData.attributes[0].value;
-            metaData["contractAddr"] = contractAddr;
+            const trustedAddr = metaData.attributes[0].value;
+            metaData["trustedAddr"] = trustedAddr;
 
             //removes duplicate attributes section
             delete metaData.attributes;

@@ -20,16 +20,17 @@ const NFTLink = styled(Link)`
 `;
 
 const NFTList = ({ nftList, isCreator }) => {
-  console.log(colorLog(2, "From NFTList", nftList));
-
+  //console.log(colorLog(2, "From NFTList", nftList));
+  console.log("nftList", nftList);
+  console.log("nftList.typeof", typeof nftList);
   const MappedNFTs = nftList.map((nft) => {
     return (
       <NFTLink
         key={nft.contractAddr}
         to={{
           pathname: isCreator
-            ? `/nft/manage/${nft.contractAddr}`
-            : `/nft/${nft.contractAddr}`,
+            ? `/nft/manage/${nft.trustedAddr}`
+            : `/nft/${nft.trustedAddr}`,
         }}
         state={{
           nftObj: { nft },

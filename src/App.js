@@ -23,6 +23,7 @@ import ConnectWallet from "./pages/ConnectWallet";
 import NFTDetail from "./components/followedNFTs/NFTDetail";
 import DetailSection from "./components/NFTs/DetailSection";
 import { tab } from "@testing-library/user-event/dist/tab";
+import { AllNFTData } from "./components/NFTs/AllNFTData";
 
 const jc = require("json-cycle");
 // Styled Components
@@ -48,36 +49,6 @@ const getProvider = () => {
     return provider;
   }
 };
-
-//ar xmtpPatched = require("@xmtp/xmtp-js");
-
-// const patchXMTP = async () => {
-//   try {
-//     colorLog(1, "Entering patchXMTP()");
-//     delete xmtpPatched.Client["create"];
-//     xmtpPatched.Client = function create(wallet, opts) {
-//       opts = { keyStoreType: 1 };
-//       console.log(
-//         "**********************RUNNING WITH PATCHED XMTP**********************"
-//       );
-//       return __awaiter(this, void 0, void 0, function* () {
-//         const options = defaultOptions(opts);
-//         const waku = yield createWaku(options);
-//         const keyStore = createKeyStoreFromConfig(options, wallet, waku);
-//         const keys = yield loadOrCreateKeys(wallet, keyStore);
-//         const client = new Client(waku, keys);
-//         yield client.init(options);
-//         return client;
-//       });
-//     };
-
-//     colorLog(1, "Exiting patchXMTP()");
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
-
-//patchXMTP();
 
 const App = () => {
   // Moralis Web3Api Instantiation
@@ -329,6 +300,7 @@ const App = () => {
 
     colorLog(1, "Exiting unpinCID()");
   };
+
   const getNFTMetaData = async () => {
     colorLog(1, "Entering getNFTMetaData");
 
@@ -349,8 +321,10 @@ const App = () => {
 
       let results = fillNftArrayWithTestData();
       _NFTsArray = results.NFTsArray;
+
       _TrustedAddressToContractAddress =
         results.TrustedAddressToContractAddress;
+
       _ContractAddressToNFTArrayIndex = results.ContractAddressToNFTArrayIndex;
 
       // console.log("****NFTsArray ", _NFTsArray);
@@ -382,7 +356,7 @@ const App = () => {
     let x = 0;
     let _ContractAddressToNFTArrayIndex = {};
     let _TrustedAddressToContractAddress = {};
-    let _NFTsArray = {};
+    let _NFTsArray = [];
     for (const NFT of NFTMetadata) {
       let NftContractAddr = NFT.contractAddr;
       let NftTrustedAddr = NFT.trustedAddr;
@@ -413,6 +387,7 @@ const App = () => {
 
   const checkMessages = async () => {
     colorLog(1, "Entering checkMessages");
+
     console.log("processingObject", processingObject);
 
     if (
@@ -429,14 +404,20 @@ const App = () => {
   //if a new NFT is added or XMTP connection established, then get messages.
   useEffect(() => {
     if (XMTPManager.connected()) checkMessages();
-  }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
+  }, [
+    processingObject.TrustedAddressToContractAddress,
+    XMTPManager.clientInstance,
+  ]);
 
   useEffect(() => {
     const interval = setInterval(() => checkMessages(), 30000);
     return () => {
       clearInterval(interval);
     };
-  }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
+  }, [
+    processingObject.TrustedAddressToContractAddress,
+    XMTPManager.clientInstance,
+  ]);
 
   //if currentAccount is updated, getNFTMetaData for new account
   useEffect(() => {
@@ -484,8 +465,10 @@ const App = () => {
 
         const msgContent = JSON.parse(message.content);
         // if message is from a trusted senderAddress and has a command attr
-        if (message.senderAddress in _TrustedAddressToContractAddress &&
-            msgContent.hasOwnProperty("command")) {
+        if (
+          message.senderAddress in _TrustedAddressToContractAddress &&
+          msgContent.hasOwnProperty("command")
+        ) {
           console.log("Message added from tba.", message.senderAddress);
           console.log(
             `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
@@ -555,9 +538,11 @@ const App = () => {
       let msgContent = JSON.parse(message.content);
 
       for (let attr of ["command", "cid", "subject", "secretKey"]) {
-        if (msgContent[attr] === undefined){
+        if (msgContent[attr] === undefined) {
           console.log(
-            "No " + attr + " in message from Trusted Broadcast Address. skipping message. (message.id): ",
+            "No " +
+              attr +
+              " in message from Trusted Broadcast Address. skipping message. (message.id): ",
             message.id
           );
         }
@@ -837,7 +822,14 @@ const App = () => {
           <Route
             path="/"
             index
-            element={<Home userNFTs={NFTsArray} allMessages={allMessages} />}
+            element={
+              <Home
+                userNFTs={NFTsArray}
+                allMessages={allMessages}
+                walletAddress={currentAccount}
+                web3Api={Web3Api}
+              />
+            }
           />
           <Route
             path="/created"
@@ -849,11 +841,47 @@ const App = () => {
               />
             }
           />
-          <Route path="/data" element={<AllData />} />
-          <Route path="/nft/:nftTitle" element={<NFTDetail />} />
+          <Route
+            path="/data"
+            element={
+              <AllNFTData
+                walletAddress={currentAccount}
+                web3Api={Web3Api}
+                NFTsArray={NFTsArray}
+              />
+            }
+          />
+
+          <Route
+            path="/nft/:nftTitle"
+            element={
+              <DetailSection
+                isCreator={false}
+                NFTsArray={NFTsArray}
+                ContractAddressToNFTArrayIndex={
+                  processingObject.ContractAddressToNFTArrayIndex
+                }
+                TrustedAddressToContractAddress={
+                  processingObject.TrustedAddressToContractAddress
+                }
+              />
+            }
+          />
+
           <Route
             path="/nft/manage/:nftAddr"
-            element={<DetailSection isCreator={true} />}
+            element={
+              <DetailSection
+                isCreator={true}
+                NFTsArray={NFTsArray}
+                ContractAddressToNFTArrayIndex={
+                  processingObject.ContractAddressToNFTArrayIndex
+                }
+                TrustedAddressToContractAddress={
+                  processingObject.TrustedAddressToContractAddress
+                }
+              />
+            }
           />
         </Routes>
       </MainContainer>
