@@ -25,6 +25,7 @@ const NFTList = ({ nftList, isCreator }) => {
   const MappedNFTs = nftList.map((nft) => {
     return (
       <NFTLink
+        key={nft.contractAddr}
         to={{
           pathname: isCreator
             ? `/nft/manage/${nft.contractAddr}`
