@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import styled from "styled-components";
-import { MainContainer } from "../App";
 
 const HeaderContainer = styled.div`
   width: 100%;
@@ -49,15 +48,18 @@ const NavContainer = styled.nav`
   border-bottom: 1px solid white;
 `;
 
-const NavLink = styled(Link)`
-  color: #b8c4d6;
+const NavigationLink = styled(NavLink)`
+  color: #ccd6dd;
   text-decoration: none;
-  margin-bottom: 1em;
+  margin: 0.25em 1em;
   font-size: 28px;
   font-weight: 700;
   min-width: 20em;
   text-align: center;
+  border-radius: 0.25em;
 `;
+
+const navStyle = {};
 
 export default function Navigation(props) {
   const walletAddress = props.walletAddress;
@@ -75,9 +77,16 @@ export default function Navigation(props) {
       <Text>Connected with:</Text>
       <Address>{walletTruncated}</Address>
       <NavContainer>
-        <NavLink to="/">Followed NFTs</NavLink>
-        <NavLink to="/created">Created NFTs</NavLink>
-        <NavLink to="/data">All</NavLink>
+        <NavigationLink
+          to="/"
+          style={(isActive) => ({
+            color: isActive ? "green" : "blue",
+          })}
+        >
+          Followed NFTs
+        </NavigationLink>
+        <NavigationLink to="/created">Created NFTs</NavigationLink>
+        <NavigationLink to="/data">All</NavigationLink>
       </NavContainer>
     </>
   );
