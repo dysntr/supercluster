@@ -480,12 +480,12 @@ const App = () => {
         if (message.content !== "undefined") continue;
         console.log(
           `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
-          //if message is from a trusted senderAddress with matching in message content process messages.
         );
-        if (
-          message.senderAddress in _TrustedAddressToContractAddress &&
-          message.content.startsWith('{"command"')
-        ) {
+
+        const msgContent = JSON.parse(message.content);
+        // if message is from a trusted senderAddress and has a command attr
+        if (message.senderAddress in _TrustedAddressToContractAddress &&
+            msgContent.hasOwnProperty("command")) {
           console.log("Message added from tba.", message.senderAddress);
           console.log(
             `Message from ${message.senderAddress}: ${message.id}: ${message.content}`
@@ -497,10 +497,12 @@ const App = () => {
     }
 
     const messagesCleaned = allMessages.map((message) => {
+      const msgContent = JSON.parse(message.content);
+
       return {
         senderAddress: message.senderAddress,
         id: message.id,
-        content: message.content,
+        content: msgContent,
       };
     });
     console.log("Cleaned messages:", messagesCleaned);
@@ -550,62 +552,29 @@ const App = () => {
       // let json =
       //   '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
 
-      // production - content will be sent in above format
-      let json = message.content;
+      let msgContent = JSON.parse(message.content);
 
-      let myRegexp, match, command, cid, subject, secretKey;
-      myRegexp = /^\{"command":"(\w+)"/i;
-      match = myRegexp.exec(json);
-      //there was a match
-      if (match !== null) {
-        command = match[1];
-        console.log("match(command):", command);
-      } else {
-        console.log(
-          "No command match in message from Trusted Broadcast Address. skipping message.(message.id): ",
-          message.id
-        );
+      for (let attr of ["command", "cid", "subject", "secretKey"]) {
+        if (msgContent[attr] === undefined){
+          console.log(
+            "No " + attr + " in message from Trusted Broadcast Address. skipping message. (message.id): ",
+            message.id
+          );
+        }
+      }
 
+      if (msgContent["command"] === undefined) {
+        // FIXME: we aren't exiting though?
         colorLog(1, "Exiting processMessages");
         _isMessageProcessed[message.id] = true;
-
         continue;
       }
 
-      //ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e
-      myRegexp = /"cid":"([: \w+ \\ /]+)"/i;
-      match = myRegexp.exec(json);
-      //there was a match
-      if (match !== null) {
-        cid = match[1];
-        console.log("match(IPFS LINK):", cid);
-      } else {
-        console.log("No CID match in message from Trusted Broadcast Address.");
-      }
-
-      myRegexp = /"subject":"([\s \w]+)"/i;
-      match = myRegexp.exec(json);
-      //there was a match
-      if (match !== null) {
-        subject = match[1];
-        console.log("match(subject):", subject);
-      } else {
-        console.log(
-          "No subject match in message from Trusted Broadcast Address."
-        );
-      }
-
-      myRegexp = /"encryptionKey":"(\w+)"/i;
-      match = myRegexp.exec(json);
-      //there was a match
-      if (match !== null) {
-        secretKey = match[1];
-        console.log("match(encryptionKey):", secretKey);
-      } else {
-        console.log(
-          "No encryptionKey match in message from Trusted Broadcast Address."
-        );
-      }
+      //get command from message.content
+      const command = msgContent["command"];
+      const cid = msgContent["cid"];
+      const subject = msgContent["subject"];
+      const secretKey = msgContent["secretKey"];
 
       //TODO: Need to deal with the case where 2NFTs have same TBA
 
