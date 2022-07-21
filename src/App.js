@@ -289,7 +289,6 @@ const App = () => {
 
   //if a new NFT is added or XMTP connection established, then get messages.
   useEffect(() => {
-    console.log(XMTPManager.connected());
     if (XMTPManager.connected()) checkMessages();
   }, [processingObject.TrustedAddressToContractAddress, XMTPManager]);
 
