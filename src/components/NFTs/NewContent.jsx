@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import styled from "styled-components";
 import { colorLog, getTodayDate } from "../../utils/Misc";
 import XMTPManager from "../../utils/Xmtp";
@@ -50,6 +50,7 @@ const NewContent = () => {
   const [subject, setSubject] = useState("");
   const [encryptionKey, setEncryptionKey] = useState("secret");
   const [ipfsCommand, setIPFSCommand] = useState("");
+  //const inputRef = useRef();
 
   const handleRecipient = (e) => {
     setRecipient(e.target.value);
@@ -87,8 +88,6 @@ const NewContent = () => {
     messageObject["createdDate"] = getTodayDate();
     messageObject["encryptionKey"] = encryptionKey;
 
-    console.log(colorLog(1, "messg obj", messageObject));
-
     try {
       colorLog(2, "Sending message to user", JSON.stringify(messageObject));
       await XMTPManager.sendMessage(recipient, JSON.stringify(messageObject));
@@ -96,7 +95,8 @@ const NewContent = () => {
       console.error("Error sending message:", e);
     }
 
-    resetState();
+    //inputRef.current.value = "";
+    //resetState();
     //console.log(messageObject);
   };
 
@@ -106,20 +106,31 @@ const NewContent = () => {
       <ContentRow>
         <ContentInput
           placeholder="Enter Receiver Address"
+          // ref={inputRef}
           onChange={handleRecipient}
         />
       </ContentRow>
       <ContentRow>
-        <ContentInput placeholder="Enter Subject" onChange={handleSubject} />
-        <ContentInput placeholder="Enter CID" onChange={handleCID} />
+        <ContentInput
+          placeholder="Enter Subject"
+          // ref={inputRef}
+          onChange={handleSubject}
+        />
+        <ContentInput
+          placeholder="Enter CID"
+          // ref={inputRef}
+          onChange={handleCID}
+        />
       </ContentRow>
       <ContentRow>
         <ContentInput
           placeholder="Enter Encryption key"
+          // ref={inputRef}
           onChange={handleEncryptionKey}
         />
         <ContentInput
           placeholder="Enter Pin or Unpin"
+          // ref={inputRef}
           onChange={handleIPFSCommand}
         />
       </ContentRow>
