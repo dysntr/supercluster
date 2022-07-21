@@ -7,7 +7,7 @@ import styled from "styled-components";
 import { useMoralisWeb3Api } from "react-moralis";
 
 // Utils
-import { getNFTOwners } from "./utils/NFT";
+import { getNFTs } from "./utils/NFT";
 import XMTPManager from "./utils/Xmtp.js";
 import { fillNftArrayWithTestData, getTodayDate, colorLog } from "./utils/Misc";
 
@@ -305,7 +305,7 @@ const App = () => {
     colorLog(1, "Entering getNFTMetaData");
 
     colorLog(3, "Entering getNFTOwners()", currentAccount);
-    let receivedNFTs = await getNFTOwners(
+    let receivedNFTs = await getNFTs(
       Web3Api,
       currentAccount,
       contractAddress

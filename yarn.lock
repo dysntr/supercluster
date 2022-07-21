@@ -3991,10 +3991,9 @@
     "@webassemblyjs/ast" "1.11.1"
     "@xtuc/long" "4.2.2"
 
-"@xmtp/xmtp-js@^5.0.0":
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/@xmtp/xmtp-js/-/xmtp-js-5.0.0.tgz#9959dbc101084de405132e6ff8d4f9818f0a6e55"
-  integrity sha512-BCglVkhErW91zRhVf1sFGsfwaNlCMa3FdUl2AnA/B75+a4vqffgWukv/W6w67ZDcSx9rtkdO6xbkoWXKT5BRhg==
+"@xmtp/xmtp-js@git+https://github.com/govi218/xmtp-js#password-encrypted-storage":
+  version "0.0.0-development"
+  resolved "git+https://github.com/govi218/xmtp-js#14f242b0c8dc533ecd097b5472ff25e76a94f7a5"
   dependencies:
     "@noble/secp256k1" "^1.5.2"
     "@stardazed/streams-polyfill" "^2.4.0"
