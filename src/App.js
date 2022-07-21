@@ -23,6 +23,7 @@ import ConnectWallet from "./pages/ConnectWallet";
 import NFTDetail from "./components/followedNFTs/NFTDetail";
 import { tab } from "@testing-library/user-event/dist/tab";
 
+const jc = require("json-cycle");
 // Styled Components
 export const MainContainer = styled.div`
   background-color: #262833;
@@ -57,7 +58,7 @@ const App = () => {
   );
   const [allMessages, setAllMessages] = useState([]);
   const [NFTsArray, setNFTsArray] = useState([]);
-
+  const [currentXMTP, setCurrentXMTP] = useState({});
   const [processingObject, setProcessingObject] = useState({
     TrustedAddressToContractAddress: {},
     ContractAddressToNFTArrayIndex: {},
@@ -71,10 +72,147 @@ const App = () => {
 
   const [enableIPFS, setEnableIPFS] = useState(true);
   const [ipfsClient, setIPFSClient] = useState({});
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+
+  const loadSessionStorage = async () => {
+    if (!sessionLoaded) {
+      colorLog(1, "Entering loadSessionStorage()");
+      let _currentXMTP = jc.retrocycle(
+        JSON.parse(sessionStorage.getItem("currentXMTP"))
+      );
+
+      console.log("_currentXMTP", _currentXMTP);
+
+      let _processingObject = JSON.parse(
+        sessionStorage.getItem("processingObject")
+      );
+      console.log("_processingObject", _processingObject);
+
+      let _ipfsClient = JSON.parse(sessionStorage.getItem("ipfsClient"));
+      console.log("_ipfsClient", _ipfsClient);
+
+      let _NFTsArray = JSON.parse(sessionStorage.getItem("NFTsArray"));
+      console.log("_NFTsArray", _NFTsArray);
+
+      let _allMessages = JSON.parse(sessionStorage.getItem("allMessages"));
+      console.log("_allMessages", _allMessages);
+
+      let _contractAddress = JSON.parse(
+        sessionStorage.getItem("contractAddress")
+      );
+      console.log("_contractAddress", _contractAddress);
+
+      let _currentAccount = JSON.parse(
+        sessionStorage.getItem("currentAccount")
+      );
+      console.log("_currentAccount", _currentAccount);
+
+      //let _web3Provider = sessionStorage.getItem("web3Provider");
+      //let _wallet = sessionStorage.getItem("wallet");
+      //let _Web3Api = sessionStorage.getItem("Web3Api");
+
+      XMTPManager.setInstance(_currentXMTP);
+      setCurrentXMTP(_currentXMTP);
+
+      setProcessingObject(_processingObject);
+      setIPFSClient(_ipfsClient);
+      setNFTsArray(_NFTsArray);
+      setAllMessages(_allMessages);
+      setContractAddress(_contractAddress);
+      setCurrentAccount(_currentAccount);
+
+      setSessionLoaded(true);
+    }
+    colorLog(1, "Exiting loadSessionStorage()");
+  };
+
+  const saveIpfsClient = async () => {
+    colorLog(1, "Entering saveIpfsClient()");
+    sessionStorage.setItem("ipfsClient", JSON.stringify(ipfsClient));
+    colorLog(1, "Exiting saveIpfsClient()");
+  };
+
+  const saveProcessingObject = async () => {
+    colorLog(1, "Entering saveProcessingObject()");
+    sessionStorage.setItem(
+      "processingObject",
+      JSON.stringify(processingObject)
+    );
+    colorLog(1, "Exiting saveProcessingObject()");
+  };
+
+  const saveNFTsArray = async () => {
+    colorLog(1, "Entering saveNFTsArray()");
+    sessionStorage.setItem("NFTsArray", JSON.stringify(NFTsArray));
+    colorLog(1, "Exiting saveNFTsArray()");
+  };
+
+  const saveAllMessages = async () => {
+    colorLog(1, "Entering saveAllMessages()");
+    sessionStorage.setItem("allMessages", JSON.stringify(allMessages));
+    colorLog(1, "Exiting saveAllMessages()");
+  };
+
+  const saveContractAddress = async () => {
+    colorLog(1, "Entering saveContractAddress()");
+    sessionStorage.setItem("contractAddress", JSON.stringify(contractAddress));
+    colorLog(1, "Exiting saveContractAddress()");
+  };
+
+  const saveCurrentAccount = async () => {
+    colorLog(1, "Entering saveCurrentAccount()");
+    sessionStorage.setItem("currentAccount", JSON.stringify(currentAccount));
+    colorLog(1, "Exiting saveCurrentAccount()");
+  };
+
+  const saveCurrentXMTP = async () => {
+    colorLog(1, "Entering saveCurrentAccount()");
+    if (XMTPManager.connected()) {
+      colorLog(3, "currentXMTP stored..");
+      sessionStorage.setItem(
+        "currentXMTP",
+        JSON.stringify(jc.decycle(currentXMTP))
+      );
+    }
+    colorLog(1, "Exiting saveCurrentAccount()");
+  };
+
+  useEffect(() => {
+    saveCurrentXMTP();
+  }, [currentXMTP]); //No dependency to trigger in each page load
+
+  useEffect(() => {
+    loadSessionStorage();
+  }, []); //No dependency to trigger in each page load
+
+  useEffect(() => {
+    saveIpfsClient();
+  }, [ipfsClient]); //No dependency to trigger in each page load
+
+  useEffect(() => {
+    saveProcessingObject();
+  }, [processingObject]); //No dependency to trigger in each page load
+
+  useEffect(() => {
+    saveNFTsArray();
+  }, [NFTsArray]); //No dependency to trigger in each page load
+
+  useEffect(() => {
+    saveAllMessages();
+  }, [allMessages]); //No dependency to trigger in each page load
+
+  useEffect(() => {
+    saveContractAddress();
+  }, [contractAddress]); //No dependency to trigger in each page load
+
+  useEffect(() => {
+    saveCurrentAccount();
+  }, [currentAccount]); //No dependency to trigger in each page load
 
   /**
    * Implement your connectWallet method here
    */
+
   const connectWallet = async () => {
     try {
       colorLog(1, "Entering connectWallet");
@@ -88,6 +226,7 @@ const App = () => {
 
       colorLog(3, "Calling checkIfXMTPConnected()");
       if (!XMTPManager.connected()) connectXMTP();
+      console.log("XMTPManager.connected()", XMTPManager.connected());
       connectedIPFS();
 
       colorLog(1, "Exiting connectWallet");
@@ -101,8 +240,8 @@ const App = () => {
     web3Provider = new ethers.providers.Web3Provider(getProvider());
     wallet = web3Provider.getSigner();
     // Create the client with your wallet. This will connect to the XMTP development network by default
-    await XMTPManager.getInstance(wallet);
-    // setCurrentXMTP(xmtp);
+    let xmtp = await XMTPManager.getInstance(wallet);
+    setCurrentXMTP(xmtp);
 
     colorLog(1, "Exiting connectXMTP");
   };
@@ -358,7 +497,10 @@ const App = () => {
     console.log(_isMessageProcessed);
 
     for (const message of _allMessages) {
-      if (message.id in _isMessageProcessed) {
+      if (
+        _isMessageProcessed !== undefined &&
+        message.id in _isMessageProcessed
+      ) {
         continue;
       }
 
