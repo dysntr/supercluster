@@ -19,9 +19,10 @@ const NFTTitle = styled.h3`
   color: white;
 `;
 const NFTGeneral = ({ nft }) => {
+  const ipfsImg = nft.image.replace("ipfs://", "https://ipfs.io/ipfs/");
   return (
     <NFT key={nft.name}>
-      <NFTImg src={nft.image} alt={nft.name} />
+      <NFTImg src={ipfsImg} alt={nft.name} />
       <NFTTitle>{nft.name}</NFTTitle>
     </NFT>
   );
