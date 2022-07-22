@@ -1,3 +1,7 @@
 .App {
   text-align: center;
 }
+
+.active {
+  border-bottom: 0.25em solid #a2c5fd;
+}
