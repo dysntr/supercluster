@@ -93,7 +93,7 @@ const NewContent = (props) => {
 
     // Get all owners of the NFT contract
     //let nftOwners = await getNFTOwners(web3Api, contractAddress);
-    let nftOwners = ["0x5A7A9517f118dCCEfAFcB6AF99ADD30b904Ce9cb"];
+    let nftOwners = ["0x5a7a9517f118dccefafcb6af99add30b904ce9cb"];
     let messageObject = {};
     messageObject["command"] = ipfsCommand;
     messageObject["cid"] = cid;

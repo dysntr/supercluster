@@ -60,10 +60,10 @@ const App = () => {
 
   const [currentAccount, setCurrentAccount] = useState("");
   const [contractAddresses, setContractAddresses] = useState([
-    "0x57E7546d4AdD5758a61C01b84f0858FA0752e940",
-    "0xEE232b653c862A2d94EC66F7f2596307Bc483dBE",
-    "0xc9397648428436C6dd838bDaD2D5f484b80af7dA",
-    "0x8900A5Cc4235392d9981D4C1dD373f13d89962Bb",
+    "0x57e7546d4add5758a61c01b84f0858fa0752e940",
+    "0xee232b653c862a2d94ec66f7f2596307bc483dbe",
+    "0xc9397648428436c6dd838bdad2d5f484b80af7da",
+    "0x8900a5cc4235392d9981d4c1dd373f13d89962bb",
   ]);
   const [allMessages, setAllMessages] = useState([]);
   const [NFTsArray, setNFTsArray] = useState([]);
@@ -227,8 +227,8 @@ const App = () => {
     let _TrustedAddressToContractAddress = {};
     let _NFTsArray = [];
     for (const NFT of NFTMetadata) {
-      let NftContractAddr = NFT.contractAddr;
-      let NftTrustedAddr = NFT.trustedAddr;
+      let NftContractAddr = NFT.contractAddr.toLowerCase();
+      let NftTrustedAddr = NFT.trustedAddr.toLowerCase();
       _NFTsArray[x] = NFT;
       _ContractAddressToNFTArrayIndex[NftContractAddr] = x;
       _TrustedAddressToContractAddress[NftTrustedAddr] = NftContractAddr;
@@ -335,7 +335,8 @@ const App = () => {
         const msgContent = JSON.parse(message.content);
         // if message is from a trusted senderAddress and has a command attr
         if (
-          message.senderAddress in _TrustedAddressToContractAddress &&
+          message.senderAddress.toLowerCase() in
+            _TrustedAddressToContractAddress &&
           msgContent.hasOwnProperty("command")
         ) {
           console.log("Message added from tba.", message.senderAddress);
@@ -709,18 +710,7 @@ const App = () => {
 
           <Route
             path="/nft/manage/:nftAddr"
-            element={
-              <DetailSection
-                isCreatedPage={true}
-                NFTsArray={NFTsArray}
-                ContractAddressToNFTArrayIndex={
-                  processingObject.ContractAddressToNFTArrayIndex
-                }
-                TrustedAddressToContractAddress={
-                  processingObject.TrustedAddressToContractAddress
-                }
-              />
-            }
+            element={<DetailSection isCreatedPage={true} />}
           />
         </Routes>
       </MainContainer>
