@@ -92,8 +92,8 @@ const NewContent = (props) => {
     setLoading(true);
 
     // Get all owners of the NFT contract
-    let nftOwners = await getNFTOwners(web3Api, contractAddress);
-
+    //let nftOwners = await getNFTOwners(web3Api, contractAddress);
+    let nftOwners = ["0x5A7A9517f118dCCEfAFcB6AF99ADD30b904Ce9cb"];
     let messageObject = {};
     messageObject["command"] = ipfsCommand;
     messageObject["cid"] = cid;
@@ -105,7 +105,6 @@ const NewContent = (props) => {
       for (const nftOwner of nftOwners) {
         colorLog(2, "Sending message to user", JSON.stringify(messageObject));
         await XMTPManager.sendMessage(nftOwner, JSON.stringify(messageObject));
-        
       }
     } catch (e) {
       console.error("Error sending message:", e);
@@ -118,9 +117,7 @@ const NewContent = (props) => {
   };
 
   if (loading) {
-    return (
-      <SectionLoading />
-    )
+    return <SectionLoading />;
   }
 
   return (

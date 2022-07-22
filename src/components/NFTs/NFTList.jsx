@@ -19,16 +19,33 @@ const NFTLink = styled(Link)`
   margin: 3em;
 `;
 
-const NFTList = ({ nftList, isCreator }) => {
+const NFTList = ({ nftList, isCreator, isCreatedPage }) => {
   //console.log(colorLog(2, "From NFTList", nftList));
   console.log("nftList", nftList);
   console.log("nftList.typeof", typeof nftList);
-  const MappedNFTs = nftList.map((nft, i) => {
+
+  const CreatorNFTs = [];
+  const FollowerNFTs = [];
+
+  nftList.map((nft) => {
+    console.log("*****nft.isCreator", nft.isCreator);
+    if (nft.isCreator) {
+      CreatorNFTs.push(nft);
+    } else {
+      FollowerNFTs.push(nft);
+    }
+  });
+
+  console.log("*****CreatorNFTs", CreatorNFTs);
+  console.log("*****FollowerNFTs", FollowerNFTs);
+  const NFTs = isCreatedPage ? CreatorNFTs : FollowerNFTs;
+  console.log("*****NFTs", NFTs);
+  const MappedNFTs = NFTs.map((nft, i) => {
     return (
       <NFTLink
         key={i}
         to={{
-          pathname: isCreator
+          pathname: nft.isCreator
             ? `/nft/manage/${nft.trustedAddr}`
             : `/nft/${nft.trustedAddr}`,
         }}
@@ -40,7 +57,7 @@ const NFTList = ({ nftList, isCreator }) => {
       </NFTLink>
     );
   });
-
+  console.log("*****MappedNFTs", MappedNFTs);
   return <List>{MappedNFTs}</List>;
 };
 
