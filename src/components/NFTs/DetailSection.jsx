@@ -37,77 +37,23 @@ const ContentInfo = styled.div`
   margin: 2em;
 `;
 
-const DetailSection = ({
-  isCreator,
-  NFTsArray,
-  ContractAddressToNFTArrayIndex,
-  TrustedAddressToContractAddress,
-}) => {
-  // Instantiate Moralis Web3 API
-  // const Web3Api = useMoralisWeb3Api();
-
+const DetailSection = ({ isCreatedPage }) => {
   const location = useLocation();
-  // NFT Object is passed through React Router in the state object
-  // see the NFT List component for prop passed nftobj
   const { nftObj } = location.state;
   const { nft } = nftObj;
-  console.log("NFT Object from DetailSection: ", nft);
-
-  // temp, need to pull pin data from the state
-  console.log("nft.contractAddr", nft.trustedAddr);
-
-  console.log(
-    "ContractAddressToNFTArrayIndex[TrustedAddressToContractAddress[TrustedAddress]]",
-    ContractAddressToNFTArrayIndex[
-      TrustedAddressToContractAddress[nft.trustedAddr]
-    ]
-  );
-  console.log("ContractAddressToNFTArrayIndex", ContractAddressToNFTArrayIndex);
-
-  console.log("NFTsArray", NFTsArray);
-
-  const contractAddress = TrustedAddressToContractAddress[nft.trustedAddr];
-
-  // useEffect(() => {
-  //   setLoading(true);
-  //   const getAsyncNFTOwners = async () => {
-  //     return await getNFTOwners(Web3Api, contractAddress);
-  //   }
-  //   let nftOwners = getAsyncNFTOwners();
-  //   console.log("NFT Owners: ", nftOwners);
-  //   setNFTOwners(nftOwners);
-  //   setLoading(false)
-  // }, [contractAddress, Web3Api])
-
-  const pinData =
-    NFTsArray[
-      ContractAddressToNFTArrayIndex[
-        TrustedAddressToContractAddress[nft.trustedAddr]
-      ]
-    ].pinData;
-  // const pinData = [
-  //   {
-  //     subject: "JWT galaxies pic",
-  //     CID: "QmedKF9UM2XDEepFZjM2rFZ4hKadTHzbRkeP4Sza2AYNrU",
-  //     date: "07/17/22",
-  //   },
-  //   {
-  //     subject: "JWT blackhole",
-  //     CID: "QmQiu4DowMCdM6H9VDZnPMm6kCCZutqUJUvCAmXzLsqHTH",
-  //     date: "07/17/22",
-  //   },
-  // ];
 
   return (
     <NFTSection>
       <Menu>
-        <BackLink to={isCreator ? "/created" : "/"} />
+        <BackLink to={isCreatedPage ? "/created" : "/"} />
       </Menu>
       <NFTContainer>
         <NFTGeneral nft={nft} />
         <ContentInfo>
-          {isCreator ? <NewContent contractAddress={contractAddress} /> : null}
-          <ContentDetails contentArray={pinData} />
+          {isCreatedPage ? (
+            <NewContent contractAddress={nft.contractAddr} />
+          ) : null}
+          <ContentDetails contentArray={nft.pinData} />
         </ContentInfo>
       </NFTContainer>
     </NFTSection>
