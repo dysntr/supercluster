@@ -1,3 +1,5 @@
+importScripts("./xmtp-js-umd/index.js")
+
 chrome.runtime.onMessage.addListener(callback);
 function callback(obj, sender, sendResponse) {
   if (obj) {
