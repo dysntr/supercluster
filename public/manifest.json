@@ -12,7 +12,20 @@
   "action": {
     "default_popup": "index.html"
   },
-  "permissions": ["identity", "storage", "unlimitedStorage"],
+  "host_permissions": [
+    "https://*/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "permissions": [
+    "identity",
+    "storage",
+    "unlimitedStorage",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js",
     "mode": "module"

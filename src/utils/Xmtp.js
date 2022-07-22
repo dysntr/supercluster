@@ -1,4 +1,7 @@
+/* global chrome */
 import { Client } from "@xmtp/xmtp-js";
+
+import { colorLog } from "../utils/Misc";
 
 export default class XMTPManager {
   static clientInstance = {};
@@ -40,7 +43,20 @@ export default class XMTPManager {
    */
   static async getInstance(wallet) {
     if (!this.connected()) {
-      this.clientInstance = await Client.create(wallet);
+      // Get the keys using a valid ethers.Signer. Save them somewhere secure.
+      const keys = await Client.getKeys(wallet);
+      var data = {
+        // Create a view
+        data: Array.apply(null, keys),
+        contentType: 'x-an-example'
+      };
+
+      // Transport over a JSON-serialized channel. In your case: sendResponse
+      var transportData = JSON.stringify(data);
+      console.log(data);
+      chrome.storage.local.set({"xmtp-identity": transportData}, () => colorLog(3, "XMTP identity pushed to chrome localstorage"));
+      // Create a client using keys returned from getKeys
+      this.clientInstance = await Client.create(null, { privateKeyOverride: keys })
     }
     return this.clientInstance;
   }
