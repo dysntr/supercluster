@@ -1,12 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import ContentDetails from "./ContentDetails";
 import NewContent from "./NewContent";
 import NFTGeneral from "./NFTGeneral";
-import {getNFTOwners} from "../../utils/NFT";
-import { useMoralisWeb3Api } from "react-moralis";
-import SectionLoading from "../SectionLoading";
 
 const NFTSection = styled.section`
   display: flex;
@@ -47,7 +44,7 @@ const DetailSection = ({
   TrustedAddressToContractAddress,
 }) => {
   // Instantiate Moralis Web3 API
-  const Web3Api = useMoralisWeb3Api();
+  // const Web3Api = useMoralisWeb3Api();
 
   const location = useLocation();
   // NFT Object is passed through React Router in the state object
@@ -71,19 +68,16 @@ const DetailSection = ({
 
   const contractAddress = TrustedAddressToContractAddress[nft.trustedAddr];
 
-  const [nftOwners, setNFTOwners] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const getAsyncNFTOwners = async () => {
-    return await getNFTOwners(Web3Api, contractAddress);
-  }
-
-  useEffect(() => {
-    setLoading(true);
-    let nftOwners = getAsyncNFTOwners();    
-    setNFTOwners(nftOwners);
-    setLoading(false)
-  }, [contractAddress])
+  // useEffect(() => {
+  //   setLoading(true);
+  //   const getAsyncNFTOwners = async () => {
+  //     return await getNFTOwners(Web3Api, contractAddress);
+  //   }
+  //   let nftOwners = getAsyncNFTOwners();
+  //   console.log("NFT Owners: ", nftOwners);
+  //   setNFTOwners(nftOwners);
+  //   setLoading(false)
+  // }, [contractAddress, Web3Api])
 
   const pinData =
     NFTsArray[
@@ -104,12 +98,6 @@ const DetailSection = ({
   //   },
   // ];
 
-  if (loading) {
-    return (
-      <SectionLoading />
-    )
-  }
-
   return (
     <NFTSection>
       <Menu>
@@ -118,7 +106,7 @@ const DetailSection = ({
       <NFTContainer>
         <NFTGeneral nft={nft} />
         <ContentInfo>
-          {isCreator ? <NewContent nftOwners={nftOwners} /> : null}
+          {isCreator ? <NewContent contractAddress={contractAddress} /> : null}
           <ContentDetails contentArray={pinData} />
         </ContentInfo>
       </NFTContainer>
