@@ -2,6 +2,9 @@ import React, { useRef, useState } from "react";
 import styled from "styled-components";
 import { colorLog, getTodayDate } from "../../utils/Misc";
 import XMTPManager from "../../utils/Xmtp";
+import { getNFTOwners } from "../../utils/NFT";
+import { useMoralisWeb3Api } from "react-moralis";
+import SectionLoading from "../SectionLoading";
 
 const NewContentForm = styled.div`
   width: 100%;
@@ -45,13 +48,16 @@ const ContentBttn = styled.button`
 `;
 
 const NewContent = (props) => {
-  console.log(props.nftOwners);
+  // Initialize Moralis API
+  let web3Api = useMoralisWeb3Api();
+  let contractAddress = props.contractAddress;
 
   const [recipient, setRecipient] = useState("");
   const [cid, setCID] = useState("");
   const [subject, setSubject] = useState("");
   const [encryptionKey, setEncryptionKey] = useState("secret");
   const [ipfsCommand, setIPFSCommand] = useState("");
+  const [loading, setLoading] = useState(false);
   //const inputRef = useRef();
 
   const handleRecipient = (e) => {
@@ -83,6 +89,11 @@ const NewContent = (props) => {
   };
 
   const submitMessage = async () => {
+    setLoading(true);
+
+    // Get all owners of the NFT contract
+    let nftOwners = await getNFTOwners(web3Api, contractAddress);
+
     let messageObject = {};
     messageObject["command"] = ipfsCommand;
     messageObject["cid"] = cid;
@@ -91,16 +102,26 @@ const NewContent = (props) => {
     messageObject["encryptionKey"] = encryptionKey;
 
     try {
-      colorLog(2, "Sending message to user", JSON.stringify(messageObject));
-      await XMTPManager.sendMessage(recipient, JSON.stringify(messageObject));
+      for (const nftOwner of nftOwners) {
+        colorLog(2, "Sending message to user", JSON.stringify(messageObject));
+        await XMTPManager.sendMessage(nftOwner, JSON.stringify(messageObject));
+        
+      }
     } catch (e) {
       console.error("Error sending message:", e);
     }
 
+    setLoading(false);
     //inputRef.current.value = "";
     //resetState();
     //console.log(messageObject);
   };
+
+  if (loading) {
+    return (
+      <SectionLoading />
+    )
+  }
 
   return (
     <NewContentForm>
