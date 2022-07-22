@@ -1,44 +1,91 @@
-export async function getNFTs(Web3Api, currentAccount, contractAddress) {
-  const options = {
-    chain: "polygon",
-    address: currentAccount,
-    token_address: contractAddress,
-  };
+import { colorLog } from "./Misc";
+
+export async function getCurrentUserNFTs(
+  Web3Api,
+  currentAccount,
+  contractAddresses
+) {
+  let nftArray = [];
+
+  let processedNFT = [];
+  let trustedAddresses = [];
 
   try {
-    const superclusterNFTs = await Web3Api.account.getNFTsForContract(options);
+    colorLog(1, "Entering getCurrentUserNFTs");
 
-    if (superclusterNFTs.result.length > 0) {
-      let nft_metadata = superclusterNFTs.result[0].metadata;
+    for (const token of contractAddresses) {
+      //if user holds multiple of the same token, skip
+      if (processedNFT.includes(token)) {
+        colorLog(2, "Skipping duplicate token", token);
+        continue;
+      }
 
-      let name_regex = /"name\":\"([\w \s]+)\"/i;
-      let name_match = name_regex.exec(nft_metadata);
-
-      let description_regex = /"description\":\"([\w \s .']+)\"/i;
-      let description_match = description_regex.exec(nft_metadata);
-
-      let image_regex = /ipfs:\/\/\w+/i;
-      let image_match = image_regex.exec(nft_metadata);
-
-      let tbaRegex = /TBA\",\"value\":\"(0x\w{40})/i;
-      let tba_match = tbaRegex.exec(nft_metadata);
-
-      let nftObject = {
-        NFTTitle: name_match[1],
-        NFTImg: image_match[0],
-        NFTDescription: description_match[1],
-        contractAddr: contractAddress,
-        trustedAddr: tba_match[1],
-        pinData: [],
+      const options = {
+        chain: "polygon",
+        address: currentAccount,
+        token_address: token,
       };
+      colorLog(3, "Getting NFTMetadata for token", token);
 
-      return nftObject;
-    } else {
-      return null;
+      const nftsForContract = await Web3Api.account.getNFTsForContract(options);
+      console.log(nftsForContract);
+      if (nftsForContract.result.length > 0) {
+        let nft_metadata = nftsForContract.result[0].metadata;
+
+        let name_regex = /"name\":\"([\w \s]+)\"/i;
+        let name_match = name_regex.exec(nft_metadata);
+
+        let description_regex = /"description\":\"([\w \s .']+)\"/i;
+        let description_match = description_regex.exec(nft_metadata);
+
+        let image_regex = /ipfs:\/\/\w+/i;
+        let image_match = image_regex.exec(nft_metadata);
+
+        let tbaRegex = /TBA\",\"value\":\"(0x\w{40})/i;
+        let tba_match = tbaRegex.exec(nft_metadata);
+
+        console.log("tba_match", tba_match);
+
+        let nftObject;
+
+        if (tba_match.length === 2) {
+          colorLog(2, "MetaData found for token,name", token, name_match[1]);
+
+          if (trustedAddresses.includes(tba_match[1])) {
+            colorLog(2, "Found duplicate TBA, skipping token", token);
+            continue;
+          }
+
+          trustedAddresses.push(tba_match[1]);
+          let isCreator = false;
+
+          if (tba_match[1].toLowerCase() == currentAccount.toLowerCase()) {
+            isCreator = true;
+          }
+
+          nftObject = {
+            NFTTitle: name_match[1],
+            NFTImg: image_match[0],
+            NFTDescription: description_match[1],
+            contractAddr: token,
+            trustedAddr: tba_match[1],
+            isCreator: isCreator,
+            pinData: [],
+          };
+
+          processedNFT.push(token);
+          nftArray.push(nftObject);
+        }
+      }
     }
   } catch (e) {
     console.error(e);
   }
+  console.log("processedNFT", processedNFT);
+  console.log("nftArray", nftArray);
+  colorLog(1, "Exiting getCurrentUserNFTs");
+
+  return nftArray;
 }
 
 export async function getCreatedNFTs(Web3Api, walletAddress) {
@@ -68,7 +115,7 @@ export async function getCreatedNFTs(Web3Api, walletAddress) {
 export async function getNFTOwners(Web3Api, contractAddress) {
   const options = {
     address: contractAddress,
-    chain: "polygon"
+    chain: "polygon",
   };
   const nftOwners = await Web3Api.token.getNFTOwners(options);
 
@@ -76,9 +123,9 @@ export async function getNFTOwners(Web3Api, contractAddress) {
   if (nftOwners && nftOwners.result.length > 0) {
     nftOwners.result.forEach((nftOwner) => {
       nftOwnersAddresses.push(nftOwner.owner_of);
-    })
+    });
     return nftOwnersAddresses;
   } else {
-    return null
+    return null;
   }
 }

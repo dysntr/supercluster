@@ -40,29 +40,10 @@ const ContentInfo = styled.div`
   margin: 0 2em 2em 2em;
 `;
 
-export const AllNFTData = ({ walletAddress, web3Api, NFTsArray }) => {
-  const [nfts, setNfts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const processNFTArray = (NFTsArray) => {
-      const newNFTArray = [];
-      const tempArray = NFTsArray.map((NFT) => {
-        const newNFT = {};
-        newNFT["name"] = NFT.NFTTitle;
-        newNFT["image"] = NFT.NFTImg;
-        newNFT["pinData"] = NFT.pinData;
-        newNFTArray.push(newNFT);
-        setNfts(newNFTArray);
-      });
-    };
-
-    processNFTArray(NFTsArray);
-  }, []);
-
-  const ALLNFTs = nfts.map((nft) => {
+export const AllNFTData = ({ NFTsArray }) => {
+  const ALLNFTs = NFTsArray.map((nft) => {
     return (
-      <NFTContainer>
+      <NFTContainer key={nft.contractAddr}>
         <NFTGeneral nft={nft} />
         <ContentInfo>
           <ContentDetails contentArray={nft.pinData} />
@@ -71,42 +52,7 @@ export const AllNFTData = ({ walletAddress, web3Api, NFTsArray }) => {
     );
   });
 
-  useEffect(() => {
-    async function getCreatedNFTs(Web3Api, walletAddress) {
-      const superClusterNFT = "0xd69DFe5AE027B4912E384B821afeB946592fb648";
-      const options = {
-        address: walletAddress,
-        chain: "polygon",
-      };
-
-      let createdNFTs = [];
-
-      const NFTs = await Web3Api.account.getNFTs(options);
-      if (NFTs.result.length > 0) {
-        NFTs.result.forEach((result) => {
-          let nft_metadata = result.metadata;
-
-          if (nft_metadata && nft_metadata.includes(superClusterNFT)) {
-            const metaData = JSON.parse(nft_metadata);
-            const trustedAddr = metaData.attributes[0].value;
-            metaData["trustedAddr"] = trustedAddr;
-
-            //removes duplicate attributes section
-            delete metaData.attributes;
-            console.log(metaData);
-            createdNFTs.push(metaData);
-          }
-        });
-        setIsLoading(false);
-        // setNfts(createdNFTs);
-      } else {
-        console.log(colorLog(1, "Error retrieving created NFTs"));
-      }
-    }
-    getCreatedNFTs(web3Api, walletAddress);
-  }, [web3Api, walletAddress]);
-
-  if (isLoading) {
+  if (!NFTsArray) {
     return <SectionLoading />;
   }
 

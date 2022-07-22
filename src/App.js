@@ -7,7 +7,7 @@ import styled from "styled-components";
 import { useMoralisWeb3Api } from "react-moralis";
 
 // Utils
-import { getNFTs } from "./utils/NFT";
+import { getCurrentUserNFTs } from "./utils/NFT";
 import XMTPManager from "./utils/Xmtp.js";
 import { fillNftArrayWithTestData, getTodayDate, colorLog } from "./utils/Misc";
 
@@ -53,10 +53,18 @@ const App = () => {
   // Moralis Web3Api Instantiation
   const Web3Api = useMoralisWeb3Api();
 
+  // Green Warrior NFT Contract Address - 0x57E7546d4AdD5758a61C01b84f0858FA0752e940
+  // Mandelbrot NFT Contract Address - 0xEE232b653c862A2d94EC66F7f2596307Bc483dBE
+  // Galactic NFT Contract Address - 0xc9397648428436C6dd838bDaD2D5f484b80af7dA
+  // Recipe guardian Contract Address - 0x8900A5Cc4235392d9981D4C1dD373f13d89962Bb
+
   const [currentAccount, setCurrentAccount] = useState("");
-  const [contractAddress, setContractAddress] = useState(
-    "0x57E7546d4AdD5758a61C01b84f0858FA0752e940"
-  );
+  const [contractAddresses, setContractAddresses] = useState([
+    "0x57E7546d4AdD5758a61C01b84f0858FA0752e940",
+    "0xEE232b653c862A2d94EC66F7f2596307Bc483dBE",
+    "0xc9397648428436C6dd838bDaD2D5f484b80af7dA",
+    "0x8900A5Cc4235392d9981D4C1dD373f13d89962Bb",
+  ]);
   const [allMessages, setAllMessages] = useState([]);
   const [NFTsArray, setNFTsArray] = useState([]);
 
@@ -166,10 +174,10 @@ const App = () => {
     colorLog(1, "Entering getNFTMetaData");
 
     colorLog(3, "Entering getNFTOwners()", currentAccount);
-    let receivedNFTs = await getNFTs(
+    let receivedNFTs = await getCurrentUserNFTs(
       Web3Api,
       currentAccount,
-      contractAddress
+      contractAddresses
     );
     if (receivedNFTs == null) {
       console.log("The connected account does not have any valid NFTs");
@@ -204,7 +212,7 @@ const App = () => {
     } else {
       if (receivedNFTs.trustedAddr !== null) {
         colorLog(3, "Calling processNFTMetadata()");
-        processNFTMetadata([receivedNFTs]);
+        processNFTMetadata(receivedNFTs);
       } else {
         console.log("Error - NFT does not have a trusted broadcast address.");
       }
@@ -213,7 +221,7 @@ const App = () => {
   };
 
   const processNFTMetadata = async (NFTMetadata) => {
-    colorLog(1, "Entering processNFTMetadata");
+    colorLog(1, "Entering processNFTMetadata", NFTMetadata);
     let x = 0;
     let _ContractAddressToNFTArrayIndex = {};
     let _TrustedAddressToContractAddress = {};
@@ -677,44 +685,17 @@ const App = () => {
       <MainContainer>
         <Navigation walletAddress={currentAccount} />
         <Routes>
-          <Route
-            path="/"
-            index
-            element={
-              <Home
-                userNFTs={NFTsArray}
-                allMessages={allMessages}
-                walletAddress={currentAccount}
-                web3Api={Web3Api}
-              />
-            }
-          />
-          <Route
-            path="/created"
-            element={
-              <Created
-                walletAddress={currentAccount}
-                web3Api={Web3Api}
-                isCreator={true}
-              />
-            }
-          />
-          <Route
-            path="/data"
-            element={
-              <AllNFTData
-                walletAddress={currentAccount}
-                web3Api={Web3Api}
-                NFTsArray={NFTsArray}
-              />
-            }
-          />
+          <Route path="/" index element={<Home NFTsArray={NFTsArray} />} />
+
+          <Route path="/created" element={<Created NFTsArray={NFTsArray} />} />
+
+          <Route path="/data" element={<AllNFTData NFTsArray={NFTsArray} />} />
 
           <Route
             path="/nft/:nftTitle"
             element={
               <DetailSection
-                isCreator={false}
+                isCreatedPage={false}
                 NFTsArray={NFTsArray}
                 ContractAddressToNFTArrayIndex={
                   processingObject.ContractAddressToNFTArrayIndex
@@ -730,7 +711,7 @@ const App = () => {
             path="/nft/manage/:nftAddr"
             element={
               <DetailSection
-                isCreator={true}
+                isCreatedPage={true}
                 NFTsArray={NFTsArray}
                 ContractAddressToNFTArrayIndex={
                   processingObject.ContractAddressToNFTArrayIndex
