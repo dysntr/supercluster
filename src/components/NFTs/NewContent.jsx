@@ -52,17 +52,11 @@ const NewContent = (props) => {
   let web3Api = useMoralisWeb3Api();
   let contractAddress = props.contractAddress;
 
-  const [recipient, setRecipient] = useState("");
   const [cid, setCID] = useState("");
   const [subject, setSubject] = useState("");
   const [encryptionKey, setEncryptionKey] = useState("secret");
   const [ipfsCommand, setIPFSCommand] = useState("");
   const [loading, setLoading] = useState(false);
-  //const inputRef = useRef();
-
-  const handleRecipient = (e) => {
-    setRecipient(e.target.value);
-  };
 
   const handleCID = (e) => {
     setCID(e.target.value);
@@ -81,7 +75,6 @@ const NewContent = (props) => {
   };
 
   const resetState = () => {
-    setRecipient("");
     setCID("");
     setSubject("");
     setEncryptionKey("secret");
@@ -123,13 +116,6 @@ const NewContent = (props) => {
   return (
     <NewContentForm>
       <h3>Send New Content to Pin</h3>
-      <ContentRow>
-        <ContentInput
-          placeholder="Enter Receiver Address"
-          // ref={inputRef}
-          onChange={handleRecipient}
-        />
-      </ContentRow>
       <ContentRow>
         <ContentInput
           placeholder="Enter Subject"
