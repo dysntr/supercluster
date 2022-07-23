@@ -81,6 +81,7 @@ const NewContent = (props) => {
     setIPFSCommand("");
   };
 
+  //Send a message to all NFT holders
   const submitMessage = async () => {
     setLoading(true);
 

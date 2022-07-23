@@ -1,6 +1,10 @@
 import { Client } from "@xmtp/xmtp-js";
 import web3 from "web3";
-
+/**
+ * XMTPManager class
+ * This class is responsible for managing XMTP connection
+ * It allows creating of an XMTP connection, sending of messages, and getting a list of conversations
+ **/
 export default class XMTPManager {
   static clientInstance = null;
 
@@ -8,7 +12,8 @@ export default class XMTPManager {
 
   static async sendMessage(recipientAddress, message) {
     // make sure address is checksum'd
-    const recipientAddressChecksum = web3.utils.toChecksumAddress(recipientAddress);
+    const recipientAddressChecksum =
+      web3.utils.toChecksumAddress(recipientAddress);
     if (this.connected()) {
       const conversation =
         await this.clientInstance.conversations.newConversation(

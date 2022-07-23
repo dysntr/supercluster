@@ -1,5 +1,12 @@
 import { colorLog } from "./Misc";
 
+/**
+ * getCurrentUserNFTs utility function
+ * This function will get the metadata for NFTs of the current user
+ * Based on the metadata it will figure out if the current user is the trusted broadcast address for an NFT they hold
+ * It will compile a list of compatible NFTs (ex. ones that have TBA attribute)
+ * This function will return a NFTsArray of all the compatible NFTs for the current user
+ **/
 export async function getCurrentUserNFTs(
   Web3Api,
   currentAccount,
@@ -88,6 +95,8 @@ export async function getCurrentUserNFTs(
   return nftArray;
 }
 
+/** DEPRECATED
+ **/
 export async function getCreatedNFTs(Web3Api, walletAddress) {
   walletAddress = "0xd69DFe5AE027B4912E384B821afeB946592fb648";
   const options = {
@@ -112,6 +121,10 @@ export async function getCreatedNFTs(Web3Api, walletAddress) {
   }
 }
 
+/**
+ * getNFTOwners utility function
+ * This function will get a list of NFT holders for a specific NFT (contract address)
+ **/
 export async function getNFTOwners(Web3Api, contractAddress) {
   const options = {
     address: contractAddress,
