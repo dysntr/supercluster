@@ -39,6 +39,16 @@ export const MainContainer = styled.div`
   color: white;
 `;
 
+const Footer = styled.div`
+  width: 100%;
+  background-color: #2c2e3b;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  color: white;
+  font-size: 22px;
+`;
+
 const getProvider = () => {
   if (window.ethereum) {
     console.log("found window.ethereum>>");
@@ -703,37 +713,46 @@ const App = () => {
     );
   } else {
     return (
-      <MainContainer>
-        <Navigation walletAddress={currentAccount} />
-        <Routes>
-          <Route path="/" index element={<Home NFTsArray={NFTsArray} />} />
+      <div>
+        <MainContainer className="Main APp">
+          <Navigation walletAddress={currentAccount} />
+          <Routes>
+            <Route path="/" index element={<Home NFTsArray={NFTsArray} />} />
 
-          <Route path="/created" element={<Created NFTsArray={NFTsArray} />} />
+            <Route
+              path="/created"
+              element={<Created NFTsArray={NFTsArray} />}
+            />
 
-          <Route path="/data" element={<AllNFTData NFTsArray={NFTsArray} />} />
+            <Route
+              path="/data"
+              element={<AllNFTData NFTsArray={NFTsArray} />}
+            />
 
-          <Route
-            path="/nft/:nftTitle"
-            element={
-              <DetailSection
-                isCreatedPage={false}
-                NFTsArray={NFTsArray}
-                ContractAddressToNFTArrayIndex={
-                  processingObject.ContractAddressToNFTArrayIndex
-                }
-                TrustedAddressToContractAddress={
-                  processingObject.TrustedAddressToContractAddress
-                }
-              />
-            }
-          />
+            <Route
+              path="/nft/:nftTitle"
+              element={
+                <DetailSection
+                  isCreatedPage={false}
+                  NFTsArray={NFTsArray}
+                  ContractAddressToNFTArrayIndex={
+                    processingObject.ContractAddressToNFTArrayIndex
+                  }
+                  TrustedAddressToContractAddress={
+                    processingObject.TrustedAddressToContractAddress
+                  }
+                />
+              }
+            />
 
-          <Route
-            path="/nft/manage/:nftAddr"
-            element={<DetailSection isCreatedPage={true} />}
-          />
-        </Routes>
-      </MainContainer>
+            <Route
+              path="/nft/manage/:nftAddr"
+              element={<DetailSection isCreatedPage={true} />}
+            />
+          </Routes>
+          <Footer>Powered by IPFS, XMTP, Polygon, NFT.Storage</Footer>
+        </MainContainer>
+      </div>
     );
   }
 };

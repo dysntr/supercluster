@@ -8,10 +8,11 @@ import NFTGeneral from "./NFTGeneral";
 const NFTSection = styled.section`
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   width: 100%;
   min-height: 30vh;
+  background-color: #2c2e3b;
+  flex-grow: 1;
 `;
 
 const Menu = styled.div`

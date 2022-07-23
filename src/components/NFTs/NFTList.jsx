@@ -6,7 +6,9 @@ import NFTGeneral from "./NFTGeneral";
 
 const List = styled.div`
   width: 100%;
-  min-height: 30vh;
+  height: 100%;
+  min-height: 100%;
+  flex-grow: 1;
   display: flex;
   justify-content: center;
   flex-direction: row;
@@ -43,6 +45,7 @@ const NFTList = ({ nftList, isCreator, isCreatedPage }) => {
   const MappedNFTs = NFTs.map((nft, i) => {
     return (
       <NFTLink
+        className="Link thing"
         key={i}
         to={{
           pathname: nft.isCreator
