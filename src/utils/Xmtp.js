@@ -1,4 +1,5 @@
 import { Client } from "@xmtp/xmtp-js";
+import web3 from "web3";
 
 export default class XMTPManager {
   static clientInstance = null;
@@ -6,10 +7,12 @@ export default class XMTPManager {
   static connected = () => this.clientInstance !== null;
 
   static async sendMessage(recipientAddress, message) {
+    // make sure address is checksum'd
+    const recipientAddressChecksum = web3.utils.toChecksumAddress(recipientAddress);
     if (this.connected()) {
       const conversation =
         await this.clientInstance.conversations.newConversation(
-          recipientAddress
+          recipientAddressChecksum
         );
       await conversation.send(message);
       return;
