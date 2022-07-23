@@ -21,6 +21,7 @@ const NFTLink = styled(Link)`
   margin: 3em;
 `;
 
+// filter out follower NFTs and NFTs the user has created (i.e. is the trusted broadcast address).
 const NFTList = ({ nftList, isCreator, isCreatedPage }) => {
   //console.log(colorLog(2, "From NFTList", nftList));
   console.log("nftList", nftList);
