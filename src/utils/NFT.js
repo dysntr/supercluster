@@ -51,12 +51,12 @@ export async function getCurrentUserNFTs(
         if (tba_match.length === 2) {
           colorLog(2, "MetaData found for token,name", token, name_match[1]);
 
-          if (trustedAddresses.includes(tba_match[1])) {
+          if (trustedAddresses.includes(tba_match[1].toLowerCase())) {
             colorLog(2, "Found duplicate TBA, skipping token", token);
             continue;
           }
 
-          trustedAddresses.push(tba_match[1]);
+          trustedAddresses.push(tba_match[1].toLowerCase());
           let isCreator = false;
 
           if (tba_match[1].toLowerCase() == currentAccount.toLowerCase()) {
@@ -67,13 +67,13 @@ export async function getCurrentUserNFTs(
             NFTTitle: name_match[1],
             NFTImg: image_match[0],
             NFTDescription: description_match[1],
-            contractAddr: token,
-            trustedAddr: tba_match[1],
+            contractAddr: token.toLowerCase(),
+            trustedAddr: tba_match[1].toLowerCase(),
             isCreator: isCreator,
             pinData: [],
           };
 
-          processedNFT.push(token);
+          processedNFT.push(token.toLowerCase());
           nftArray.push(nftObject);
         }
       }

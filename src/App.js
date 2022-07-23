@@ -351,9 +351,9 @@ const App = () => {
 
     const messagesCleaned = allMessages.map((message) => {
       const msgContent = JSON.parse(message.content);
-
+      let _sender = message.senderAddress.toLowerCase();
       return {
-        senderAddress: message.senderAddress,
+        senderAddress: _sender,
         id: message.id,
         content: msgContent,
       };
@@ -432,13 +432,24 @@ const App = () => {
 
       switch (command) {
         case "pin":
-          colorLog(3, "Calling pinItem()", cid, subject, message.senderAddress);
-          pinItem(cid, subject, message.senderAddress);
+          colorLog(
+            3,
+            "Calling pinItem()",
+            cid,
+            subject,
+            message.senderAddress.toLowerCase()
+          );
+          pinItem(cid, subject, message.senderAddress.toLowerCase());
           break;
 
         case "unpin":
-          colorLog(3, "Calling unpinItem()", cid, message.senderAddress);
-          unpinItem(cid, message.senderAddress);
+          colorLog(
+            3,
+            "Calling unpinItem()",
+            cid,
+            message.senderAddress.toLowerCase()
+          );
+          unpinItem(cid, message.senderAddress.toLowerCase());
           break;
 
         default:
@@ -498,8 +509,17 @@ const App = () => {
     //update the mapping objects
     //get contract address
     let contractAddress = _TrustedAddressToContractAddress[_tba];
-
+    console.log(
+      "&&&&&&&&&&&&&&&&&_processingObject.TrustedAddressToContractAddress;",
+      processingObject.TrustedAddressToContractAddress
+    );
     //if the NFT has already been added continue, otherwise return.
+    console.log(
+      "&&&&&&&&&&&&&&&&&_ContractAddressToNFTArrayIndex",
+      _ContractAddressToNFTArrayIndex
+    );
+    console.log("&&&&&&&&&&&&&&&&& contractAddress", contractAddress);
+
     if (contractAddress in _ContractAddressToNFTArrayIndex) {
       console.log(
         "Working on adding a new pin for existing nft collection to follower console."
