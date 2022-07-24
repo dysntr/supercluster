@@ -1,3 +1,4 @@
+//returns today's date in MM/DD/YY Format
 function getTodayDate() {
   try {
     let date = new Date();
@@ -13,6 +14,7 @@ function getTodayDate() {
   }
 }
 
+//return test data for NFTsArray
 function fillNftArrayWithTestData() {
   try {
     console.log("Filling NFTsArray with test data");
@@ -45,6 +47,11 @@ function fillNftArrayWithTestData() {
   }
 }
 
+//Allow color printing in the console log
+//
+//level 1 - function entrance/exit
+//level 2 - important actions
+//level 3 - function calls
 function colorLog(
   level = 1,
   message,

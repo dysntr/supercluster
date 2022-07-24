@@ -49,6 +49,7 @@ const Footer = styled.div`
   font-size: 22px;
 `;
 
+// returns ethereum provide
 const getProvider = () => {
   if (window.ethereum) {
     console.log("found window.ethereum>>");
@@ -63,21 +64,54 @@ const App = () => {
   // Moralis Web3Api Instantiation
   const Web3Api = useMoralisWeb3Api();
 
+  //currently logged in ethereum account
+  const [currentAccount, setCurrentAccount] = useState("");
+
+  // In the future, the contract addresses will be added through the GUI by the user.
   // Green Warrior NFT Contract Address - 0x57E7546d4AdD5758a61C01b84f0858FA0752e940
   // Mandelbrot NFT Contract Address - 0xEE232b653c862A2d94EC66F7f2596307Bc483dBE
   // Galactic NFT Contract Address - 0xc9397648428436C6dd838bDaD2D5f484b80af7dA
   // Recipe guardian Contract Address - 0x8900A5Cc4235392d9981D4C1dD373f13d89962Bb
-
-  const [currentAccount, setCurrentAccount] = useState("");
   const [contractAddresses, setContractAddresses] = useState([
     "0x57e7546d4add5758a61c01b84f0858fa0752e940",
     "0xee232b653c862a2d94ec66f7f2596307bc483dbe",
     "0xc9397648428436c6dd838bdad2d5f484b80af7da",
     "0x8900a5cc4235392d9981d4c1dd373f13d89962bb",
   ]);
+
+  //allMessages contains a list of all messages the user has received from trusted broadcast addresses from different NFTs
   const [allMessages, setAllMessages] = useState([]);
+
+  //NFTsArray contains the metadata and pinned items for every NFT the user is following or has created
+  //NFTsArray is constructed using the NFTs contained in contractAddresses and allMessages received on XMTP channel.
+  //Example of scheme of an item inside NFTsArray:
+  //  {
+  //   NFTTitle: "JWT Galaxy",
+  //   NFTImg: "/fakeNFT/galaxies.jpg",
+  //   contractAddr: "0x0d145472c4Cc8D3d5c7b02A811f4FD83d26382A0",
+  //   trustedAddr: "0x0d145472c4Cc8D3d5c7b02A811f4FD83d26382A0",
+  //   isCreator: true
+  //   pinData: [
+  //     {
+  //       subject: "JWT galaxies pic",
+  //       CID: "QmedKF9UM2XDEepFZjM2rFZ4hKadTHzbRkeP4Sza2AYNrU",
+  //       date: "07/17/22",
+  //     },
+  //     {
+  //       subject: "JWT blackhole",
+  //       CID: "QmQiu4DowMCdM6H9VDZnPMm6kCCZutqUJUvCAmXzLsqHTH",
+  //       date: "07/17/22",
+  //     },
+  //   ],
+  // }
   const [NFTsArray, setNFTsArray] = useState([]);
 
+  //processingObject is used for manipulating NFTsArray to keep track of NFTs, pinned items, and message processing
+  //TrustedAddressToContractAddress object - will return the NFT contract address for a given Trusted Address
+  //ContractAddressToNFTArrayIndex object - will return the NFTsArray Index for a given contract address
+  //CIDtoContractAddress - will return the Contract Address for a given pinned CID
+  //CIDtoPinDataArrayIndex - will return PinData Array Index of an NFT in NFTsArray[] for a given pinned CID
+  //isMessageProcessed - will return true or false if the message has been processed (ex.pinned/unpinned)
   const [processingObject, setProcessingObject] = useState({
     TrustedAddressToContractAddress: {},
     ContractAddressToNFTArrayIndex: {},
@@ -89,12 +123,17 @@ const App = () => {
   let web3Provider;
   let wallet;
 
+  //Used for testing, if enableIPFS is false, the commands won't be sent to IPFS node for pinning
   const [enableIPFS, setEnableIPFS] = useState(true);
   const [ipfsClient, setIPFSClient] = useState({});
 
   /**
-   * Implement your connectWallet method here
-   */
+   * ConnectWallet method
+   * Tasks performed in this function:
+   * Connects Web3 Account
+   * Call Create XMTP connection if a connection doesn't exist
+   * Call Create IPFS API connection
+   **/
   const connectWallet = async () => {
     try {
       colorLog(1, "Entering connectWallet");
@@ -116,6 +155,11 @@ const App = () => {
     }
   };
 
+  /**
+   * connectXMTP method
+   * Task(s) performed in this function:
+   * Creates XMTP connection if a connection doesn't exist
+   **/
   const connectXMTP = async () => {
     colorLog(1, "Entering connectXMTP");
     web3Provider = new ethers.providers.Web3Provider(getProvider());
@@ -127,9 +171,13 @@ const App = () => {
     colorLog(1, "Exiting connectXMTP");
   };
 
-  const connectedIPFS = async () => {
-    //See https://github.com/ipfs/js-ipfs/tree/master/docs/core-api
-    //CORS bypass- need add these or * instead of the individual entries to ipfs config file..
+  /**
+   * connectedIPFS method
+   * Task(s) performed in this function:
+   * Connect to IPFS API if enableIPFS is enabled
+   * CORS bypass needs to be in place for this to work.
+   * See https://github.com/ipfs/js-ipfs/tree/master/docs/core-api
+   * CORS bypass- need add these or * instead of the individual entries to ipfs config file..
     // "API": {
     //   "HTTPHeaders": {
     //     "Access-Control-Allow-Origin": [
@@ -138,6 +186,8 @@ const App = () => {
     //       "http://127.0.0.1"
     //     ]
     //   }
+   **/
+  const connectedIPFS = async () => {
     colorLog(1, "Entering checkIfIPFSConnected");
     if (!enableIPFS) {
       colorLog(1, "Exiting checkIfIPFSConnected");
@@ -154,6 +204,11 @@ const App = () => {
     colorLog(1, "Exiting checkIfIPFSConnected");
   };
 
+  /**
+   * pinCID method
+   * Task(s) performed in this function:
+   * Pin the file on IPFS via API if enableIPFS is enabled
+   **/
   const pinCID = async (_cid) => {
     colorLog(1, "Entering pinCID()");
     if (!enableIPFS) {
@@ -167,6 +222,11 @@ const App = () => {
     colorLog(1, "Exiting pinCID()");
   };
 
+  /**
+   * unpinCID method
+   * Task(s) performed in this function:
+   * unpin the file on IPFS via API if enableIPFS is enabled
+   **/
   const unpinCID = async (_cid) => {
     colorLog(1, "Entering unpinCID()");
     if (!enableIPFS) {
@@ -180,6 +240,13 @@ const App = () => {
     colorLog(1, "Exiting unpinCID()");
   };
 
+  /**
+   * getNFTMetaData method
+   * Task(s) performed in this function:
+   * Call getCurrentUserNFTs to get a the NFTs Metadata from Moralis
+   * Call processNFTMetadata if getCurrentUserNFTs returned Metadata for processing
+   * If user has no compatible NFTs, call fillNftArrayWithTestData to fill with test data
+   **/
   const getNFTMetaData = async () => {
     colorLog(1, "Entering getNFTMetaData");
 
@@ -230,6 +297,11 @@ const App = () => {
     colorLog(1, "Exiting getNFTMetaData");
   };
 
+  /**
+   * processNFTMetadata method
+   * Task(s) performed in this function:
+   * Take the NFTs Metadata and build NFTsArray and processingObject
+   **/
   const processNFTMetadata = async (NFTMetadata) => {
     colorLog(1, "Entering processNFTMetadata", NFTMetadata);
     let x = 0;
@@ -264,6 +336,11 @@ const App = () => {
     colorLog(1, "Exiting processNFTMetadata");
   };
 
+  /**
+   * checkMessages method
+   * Task(s) performed in this function:
+   * This function will call getMessages() if XMTP connection exists and user has some compatible NFTs
+   **/
   const checkMessages = async () => {
     colorLog(1, "Entering checkMessages");
 
@@ -288,6 +365,7 @@ const App = () => {
     XMTPManager.clientInstance,
   ]);
 
+  //every 30secs run checkMessages, continuously watching the XMTP channel for new messages from creators
   useEffect(() => {
     const interval = setInterval(() => checkMessages(), 30000);
     return () => {
@@ -307,6 +385,15 @@ const App = () => {
     }
   }, [currentAccount]);
 
+  /**
+   * getMessages method
+   * Task(s) performed in this function:
+   * Get all the messages sent to current user via XMTP
+   * If messages are from trusted broadcast addresses and have the correct format, add them to allMessages object
+   * Call processMessages which will process all Messages object
+   * An Example of valid message schema from a trusted broadcast address:
+   *  '{"command":"pin","cid":"ipfs://bafybeigpwzgifof6qbblw67wplb7xtjloeuozaz7wamkfjvnztrjjwvk7e","subject":"test subject","encryptionKey":"testEncryptionKey"}';
+   **/
   const getMessages = async () => {
     colorLog(1, "Entering getMessages");
     const conversations = await XMTPManager.getConversations();
@@ -381,6 +468,14 @@ const App = () => {
     colorLog(1, "Exiting getMessages");
   };
 
+  /**
+   * processMessages method
+   * Task(s) performed in this function:
+   * Go over allMessages object
+   * If a message hasn't been processed before, process it
+   * If a message contains a valid pin command call pinItem
+   * If a message contains a valid unpin command call pinItem
+   **/
   const processMessages = async (_allMessages) => {
     //TODO: sanitize all message.content prior to printing out or processing.
     //get command
@@ -479,6 +574,13 @@ const App = () => {
     colorLog(1, "Exiting processMessages");
   };
 
+  /**
+   * pinItem method
+   * Task(s) performed in this function:
+   * Update NFTsArray with the new item
+   * Update the processingObject
+   * Call pinCID to pin the cid via IPFS API
+   **/
   const pinItem = async (_cid, _subject, _tba) => {
     colorLog(1, "Entering pinItem", _cid, _subject, _tba);
 
@@ -519,16 +621,6 @@ const App = () => {
     //update the mapping objects
     //get contract address
     let contractAddress = _TrustedAddressToContractAddress[_tba];
-    console.log(
-      "&&&&&&&&&&&&&&&&&_processingObject.TrustedAddressToContractAddress;",
-      processingObject.TrustedAddressToContractAddress
-    );
-    //if the NFT has already been added continue, otherwise return.
-    console.log(
-      "&&&&&&&&&&&&&&&&&_ContractAddressToNFTArrayIndex",
-      _ContractAddressToNFTArrayIndex
-    );
-    console.log("&&&&&&&&&&&&&&&&& contractAddress", contractAddress);
 
     if (contractAddress in _ContractAddressToNFTArrayIndex) {
       console.log(
@@ -607,6 +699,13 @@ const App = () => {
     }
   };
 
+  /**
+   * unpinItem method
+   * Task(s) performed in this function:
+   * Update NFTsArray with the new item
+   * Update the processingObject
+   * Call unpinCID to unpin the cid via IPFS API
+   **/
   const unpinItem = async (_cid, _tba) => {
     colorLog(1, "Entering unpinItem", _cid, _tba);
 
