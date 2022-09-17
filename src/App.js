@@ -1,4 +1,4 @@
-import { create, CID } from "ipfs-http-client";
+import { create } from "ipfs-core";
 import "./App.css";
 import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
@@ -125,7 +125,7 @@ const App = () => {
 
   //Used for testing, if enableIPFS is false, the commands won't be sent to IPFS node for pinning
   const [enableIPFS, setEnableIPFS] = useState(true);
-  const [ipfsClient, setIPFSClient] = useState({});
+  const [ipfs, setIPFS] = useState({});
 
   /**
    * ConnectWallet method
@@ -188,20 +188,28 @@ const App = () => {
     //   }
    **/
   const connectedIPFS = async () => {
+    //bypassing function to test local node
+
     colorLog(1, "Entering checkIfIPFSConnected");
-    if (!enableIPFS) {
-      colorLog(1, "Exiting checkIfIPFSConnected");
-      return;
-    }
+
     //brave - http://localhost:45005/api/v0
     //const client = create({ url: "http://localhost:45005/api/v0" });
 
     //normal ipfs - http://localhost:5001/api/v0
-    const client = create({ url: "http://localhost:5001/api/v0" });
+    //const client = create({ url: "http://localhost:5001/api/v0" });
 
-    setIPFSClient(client);
+    const client = await create();
+    setIPFS(client);
 
     colorLog(1, "Exiting checkIfIPFSConnected");
+  };
+
+  const getPinnedFiles = async () => {
+    console.log("Pinned Files:");
+    for await (const { cid, type } of ipfs.pin.ls()) {
+      let _cid = cid.toString();
+      console.log({ _cid, type });
+    }
   };
 
   /**
@@ -211,14 +219,17 @@ const App = () => {
    **/
   const pinCID = async (_cid) => {
     colorLog(1, "Entering pinCID()");
-    if (!enableIPFS) {
+    if (!ipfs) {
       colorLog(1, "Exiting pinCID()");
 
       return;
     }
+    //let cid = await ipfsClient.pin.add(CID.parse(_cid));
+    //bafkreihvcifpkay3q7jzjqrdtrc34loqcw4iiquasl36xcpn3pj6dbla2y
 
-    let cid = await ipfsClient.pin.add(CID.parse(_cid));
+    const cid = await ipfs.pin.add(_cid);
 
+    getPinnedFiles();
     colorLog(1, "Exiting pinCID()");
   };
 
@@ -229,13 +240,15 @@ const App = () => {
    **/
   const unpinCID = async (_cid) => {
     colorLog(1, "Entering unpinCID()");
-    if (!enableIPFS) {
+    if (!ipfs) {
       colorLog(1, "Exiting unpinCID()");
       return;
     }
 
-    let cid = await ipfsClient.pin.rm(_cid);
-    console.log(cid._baseCache.get("z"));
+    const cid = await ipfs.pin.rm(_cid);
+    getPinnedFiles();
+    // let cid = await ipfsClient.pin.rm(_cid);
+    // console.log(cid._baseCache.get("z"));
 
     colorLog(1, "Exiting unpinCID()");
   };
